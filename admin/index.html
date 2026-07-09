@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin | Shree Shyam Services</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body{background:var(--paper-dim);}
+  .admin-bar{background:var(--teal);color:#fff;padding:14px 0;}
+  .admin-bar .container{display:flex;justify-content:space-between;align-items:center;}
+  .status-pill{padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;}
+  .status-new{background:#FBEAE6;color:#9C3620;}
+  .status-confirmed{background:#FFF3D6;color:#8A5A00;}
+  .status-in-progress{background:#DCEBFB;color:#1F5C8A;}
+  .status-completed{background:#E6F2E9;color:#1F5C33;}
+  .status-cancelled{background:#EAEAEA;color:#666;}
+  table{width:100%;border-collapse:collapse;background:#fff;font-size:0.9rem;}
+  th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;}
+  th{background:var(--paper-dim);font-family:'Space Grotesk',sans-serif;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--teal);}
+  select.status-select{margin:0;padding:6px 8px;font-size:0.82rem;}
+  .login-wrap{max-width:380px;margin:80px auto;}
+  .stat-row{display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap;}
+  .stat{background:#fff;border:1px solid var(--line);padding:16px 20px;border-radius:4px;}
+  .stat strong{display:block;font-family:'Space Grotesk',sans-serif;font-size:1.6rem;color:var(--teal);}
+  .stat span{font-size:0.78rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.04em;}
+</style>
+</head>
+<body>
+
+<div id="login-view" class="login-wrap">
+  <div class="form-card">
+    <h2 class="text-center">Admin Login</h2>
+    <div id="login-msg" class="form-msg"></div>
+    <form id="login-form">
+      <label for="email">Email</label>
+      <input type="email" id="email" required>
+      <label for="password">Password</label>
+      <input type="password" id="password" required>
+      <button type="submit" class="btn btn-primary btn-block">Log In</button>
+    </form>
+  </div>
+</div>
+
+<div id="dashboard-view" style="display:none;">
+  <div class="admin-bar">
+    <div class="container">
+      <strong>Shree Shyam Services — Admin</strong>
+      <button id="logout-btn" class="btn btn-outline" style="border-color:#fff;color:#fff;padding:8px 16px;">Log Out</button>
+    </div>
+  </div>
+
+  <div class="container" style="padding:32px 24px;">
+    <div class="stat-row" id="stat-row"></div>
+
+    <div style="margin-bottom:16px;">
+      <label for="filter-status" style="display:inline;margin-right:8px;">Filter:</label>
+      <select id="filter-status" style="width:auto;display:inline-block;margin-bottom:0;">
+        <option value="all">All Bookings</option>
+        <option value="new">New</option>
+        <option value="confirmed">Confirmed</option>
+        <option value="in-progress">In Progress</option>
+        <option value="completed">Completed</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th><th>Received</th><th>Customer</th><th>Service</th><th>Address / Area</th><th>Preferred</th><th>Notes</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="bookings-body">
+          <tr><td colspan="8" class="text-center">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/js/main.js"></script>
+<script>
+const client = getClient();
+let allBookings = [];
+
+async function checkSession() {
+  const { data } = await client.auth.getSession();
+  if (data.session) {
+    showDashboard();
+  } else {
+    document.getElementById('login-view').style.display = 'block';
+    document.getElementById('dashboard-view').style.display = 'none';
+  }
+}
+
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('login-msg');
+  msg.className = 'form-msg';
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  const { error } = await client.auth.signInWithPassword({ email, password });
+  if (error) {
+    msg.classList.add('err');
+    msg.textContent = 'Login failed — check your email and password.';
+    return;
+  }
+  showDashboard();
+});
+
+document.getElementById('logout-btn').addEventListener('click', async () => {
+  await client.auth.signOut();
+  location.reload();
+});
+
+async function showDashboard() {
+  document.getElementById('login-view').style.display = 'none';
+  document.getElementById('dashboard-view').style.display = 'block';
+  await loadBookings();
+}
+
+async function loadBookings() {
+  const { data, error } = await client
+    .from('bookings')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  const tbody = document.getElementById('bookings-body');
+  if (error) {
+    tbody.innerHTML = `<tr><td colspan="8">Couldn't load bookings — check that your login has admin access (see supabase/schema.sql setup steps).</td></tr>`;
+    return;
+  }
+  allBookings = data;
+  renderStats(data);
+  renderTable(data);
+}
+
+function renderStats(data) {
+  const counts = { new: 0, confirmed: 0, 'in-progress': 0, completed: 0 };
+  data.forEach(b => { if (counts[b.status] !== undefined) counts[b.status]++; });
+  const row = document.getElementById('stat-row');
+  row.innerHTML = `
+    <div class="stat"><strong>${data.length}</strong><span>Total Bookings</span></div>
+    <div class="stat"><strong>${counts.new}</strong><span>New</span></div>
+    <div class="stat"><strong>${counts.confirmed}</strong><span>Confirmed</span></div>
+    <div class="stat"><strong>${counts['in-progress']}</strong><span>In Progress</span></div>
+    <div class="stat"><strong>${counts.completed}</strong><span>Completed</span></div>
+  `;
+}
+
+function renderTable(data) {
+  const tbody = document.getElementById('bookings-body');
+  if (data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center">No bookings yet.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map(b => `
+    <tr>
+      <td>#${b.id}</td>
+      <td>${new Date(b.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</td>
+      <td><strong>${b.customer_name}</strong><br><a href="tel:${b.phone}">${b.phone}</a></td>
+      <td>${b.service_type}${b.appliance_brand ? '<br><span style="color:var(--ink-soft);">' + b.appliance_brand + '</span>' : ''}</td>
+      <td>${b.address}<br><span style="color:var(--ink-soft);">${b.area || ''}</span></td>
+      <td>${b.preferred_date || '—'}<br>${b.preferred_slot || ''}</td>
+      <td style="max-width:200px;">${b.notes || '—'}</td>
+      <td>
+        <select class="status-select" data-id="${b.id}">
+          ${['new','confirmed','in-progress','completed','cancelled'].map(s =>
+            `<option value="${s}" ${b.status === s ? 'selected' : ''}>${s}</option>`
+          ).join('')}
+        </select>
+      </td>
+    </tr>
+  `).join('');
+
+  document.querySelectorAll('.status-select').forEach(sel => {
+    sel.addEventListener('change', async (e) => {
+      const id = e.target.getAttribute('data-id');
+      const newStatus = e.target.value;
+      const { error } = await client.from('bookings').update({ status: newStatus }).eq('id', id);
+      if (error) alert('Could not update status: ' + error.message);
+      else loadBookings();
+    });
+  });
+}
+
+document.getElementById('filter-status').addEventListener('change', (e) => {
+  const val = e.target.value;
+  const filtered = val === 'all' ? allBookings : allBookings.filter(b => b.status === val);
+  renderTable(filtered);
+});
+
+checkSession();
+</script>
+</body>
+</html>
