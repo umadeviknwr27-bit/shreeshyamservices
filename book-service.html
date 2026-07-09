@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Book a Service | Shree Shyam Services</title>
+<meta name="description" content="Book AC, refrigerator or washing machine repair in Dwarka & West Delhi. Confirm your slot in under a minute.">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div id="nav-root"></div>
+
+<section class="section-tight section-dim">
+  <div class="container">
+    <span class="eyebrow">Book Service</span>
+    <h1 style="margin-bottom:6px;">Tell us what's wrong. We'll take it from here.</h1>
+    <p>Fill this in and we'll call to confirm your slot — usually within 30 minutes during working hours (10 AM – 10 PM).</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container" style="max-width:720px;">
+    <div class="form-card">
+      <div id="booking-msg" class="form-msg"></div>
+      <form id="booking-form">
+        <div class="form-row-2">
+          <div>
+            <label for="customer_name">Full Name *</label>
+            <input type="text" id="customer_name" name="customer_name" required>
+          </div>
+          <div>
+            <label for="phone">Phone Number *</label>
+            <input type="tel" id="phone" name="phone" placeholder="10-digit mobile" required>
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div>
+            <label for="service_type">Service Needed *</label>
+            <select id="service_type" name="service_type" required>
+              <option value="">Select service</option>
+              <option value="ac-repair">AC Repair / Service</option>
+              <option value="ac-gas-refill">AC Gas Refill</option>
+              <option value="ac-installation">AC Installation</option>
+              <option value="refrigerator-repair">Refrigerator Repair</option>
+              <option value="washing-machine-repair">Washing Machine Repair</option>
+              <option value="amc">AMC (Annual Maintenance)</option>
+              <option value="other">Other / Not Sure</option>
+            </select>
+          </div>
+          <div>
+            <label for="appliance_brand">Appliance Brand (if known)</label>
+            <input type="text" id="appliance_brand" name="appliance_brand" placeholder="e.g. Voltas, LG, Samsung">
+          </div>
+        </div>
+
+        <label for="address">Full Address *</label>
+        <textarea id="address" name="address" rows="2" placeholder="House no., street, landmark" required></textarea>
+
+        <div class="form-row-2">
+          <div>
+            <label for="area">Area *</label>
+            <select id="area" name="area" required>
+              <option value="">Select area</option>
+              <option>Sector 6, Dwarka</option>
+              <option>Sector 7, Dwarka</option>
+              <option>Sector 10, Dwarka</option>
+              <option>Sector 12, Dwarka</option>
+              <option>Sector 14, Dwarka</option>
+              <option>Sector 22, Dwarka</option>
+              <option>Uttam Nagar</option>
+              <option>Najafgarh</option>
+              <option>Other West Delhi area</option>
+            </select>
+          </div>
+          <div>
+            <label for="preferred_date">Preferred Date</label>
+            <input type="date" id="preferred_date" name="preferred_date">
+          </div>
+        </div>
+
+        <label for="preferred_slot">Preferred Time Slot</label>
+        <select id="preferred_slot" name="preferred_slot">
+          <option value="morning">Morning (10 AM – 1 PM)</option>
+          <option value="afternoon">Afternoon (1 PM – 5 PM)</option>
+          <option value="evening">Evening (5 PM – 10 PM)</option>
+        </select>
+
+        <label for="notes">Describe the Problem</label>
+        <textarea id="notes" name="notes" rows="3" placeholder="e.g. AC not cooling since yesterday, water leaking from indoor unit"></textarea>
+
+        <button type="submit" class="btn btn-primary btn-block">Book Service</button>
+        <a id="booking-wa-confirm" href="#" style="display:none;margin-top:12px;" class="btn btn-wa btn-block">Send Copy on WhatsApp</a>
+      </form>
+    </div>
+    <p class="text-center" style="margin-top:20px;font-size:0.9rem;">Prefer to talk? Call <a href="tel:+919599459187">+91 95994 59187</a> or <a href="https://wa.me/919599459187">WhatsApp us</a> directly.</p>
+  </div>
+</section>
+
+<div id="footer-root"></div>
+<script src="/assets/js/main.js"></script>
+<script>renderNav(''); renderFooter();</script>
+</body>
+</html>

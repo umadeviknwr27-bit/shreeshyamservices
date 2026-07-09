@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact Us | Shree Shyam Services</title>
+<meta name="description" content="Contact Shree Shyam Services for AC, refrigerator or washing machine repair in Dwarka & West Delhi.">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div id="nav-root"></div>
+
+<section class="section-tight section-dim">
+  <div class="container">
+    <span class="eyebrow">Contact</span>
+    <h1>Get in touch</h1>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container grid grid-2">
+    <div>
+      <h3>Call or WhatsApp</h3>
+      <p><a href="tel:+919599459187">+91 95994 59187</a><br><a href="tel:+917011509629">+91 70115 09629</a></p>
+      <h3>Address</h3>
+      <p>B1/46 Bharat Vihar, Kakrola,<br>near Deepika International School,<br>Sector 14, Dwarka, New Delhi</p>
+      <h3>Hours</h3>
+      <p>10:00 AM – 10:00 PM, all 7 days</p>
+    </div>
+    <div class="form-card">
+      <div id="contact-msg" class="form-msg"></div>
+      <form id="contact-form">
+        <label for="name">Name *</label>
+        <input type="text" id="name" name="name" required>
+        <label for="phone">Phone *</label>
+        <input type="tel" id="phone" name="phone" required>
+        <label for="message">Message *</label>
+        <textarea id="message" name="message" rows="4" required></textarea>
+        <button type="submit" class="btn btn-primary btn-block">Send Message</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<div id="footer-root"></div>
+<script src="/assets/js/main.js"></script>
+<script>renderNav('contact'); renderFooter();</script>
+</body>
+</html>
