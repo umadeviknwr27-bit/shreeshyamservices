@@ -20,24 +20,163 @@ function getClient() {
 }
 
 // ---------------------------------------------------------------
-// 2. BUSINESS INFO — single source of truth, used across nav/footer/contact
+// 2. BUSINESS INFO — defaults, overwritten at runtime from the
+//    `page_content` table (page_key = 'business_info') so it's editable
+//    from admin. These hardcoded values are only the fallback shown
+//    before that fetch resolves, or if Supabase is unreachable.
 // ---------------------------------------------------------------
 const BUSINESS = {
   name: "Shree Shyam Services",
   phones: ["+91 9599459187", "+91 7011509629"],
   whatsapp: "919599459187", // primary, no + or spaces, for wa.me links
   address: "B1/46 Bharat Vihar, Kakrola, near Deepika International School, Sector 14, Dwarka, New Delhi",
-  areas: ["Dwarka", "Sector 6", "Sector 7", "Sector 10", "Sector 12", "Sector 14", "Sector 22", "Uttam Nagar", "Najafgarh", "West Delhi"],
   hours: "10:00 AM – 10:00 PM, All 7 days",
+  social: { facebook: "", instagram: "", youtube: "", google: "" }, // empty = icon hidden
 };
 
+// Logo/favicon — set from admin (Branding tab), stored in site_settings.
+// Empty = fall back to the text-based "SS" badge and no custom favicon.
+const BRANDING = { logo_url: "", favicon_url: "" };
+
+async function loadBranding() {
+  try {
+    const client = getClient();
+    if (!client) return;
+    const { data, error } = await client.from("site_settings").select("logo_url, favicon_url").eq("id", 1).single();
+    if (error || !data) return;
+    BRANDING.logo_url = data.logo_url || "";
+    BRANDING.favicon_url = data.favicon_url || "";
+    if (BRANDING.favicon_url) {
+      let link = document.querySelector("link[rel='icon']");
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = "icon";
+        document.head.appendChild(link);
+      }
+      link.href = BRANDING.favicon_url;
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
 // ---------------------------------------------------------------
-// 3. NAV
+// 2.5. GENERIC CONTENT SYSTEM — every page's editable text lives in the
+//      `page_content` table as {page_key, content: {key: value}}. Any
+//      element with data-ck="some_key" gets its innerHTML replaced by
+//      content.some_key once loaded. This is generic on purpose: adding
+//      a new editable field anywhere just means adding a data-ck attribute
+//      in the HTML and a matching key in Supabase — no code changes needed.
+// ---------------------------------------------------------------
+async function loadBusinessInfo() {
+  try {
+    const client = getClient();
+    if (!client) return;
+    const { data, error } = await client.from("page_content").select("content").eq("page_key", "business_info").single();
+    if (error || !data || !data.content) return;
+    const c = data.content;
+    if (c.name) BUSINESS.name = c.name;
+    if (c.phone_1 || c.phone_2) BUSINESS.phones = [c.phone_1 || BUSINESS.phones[0], c.phone_2 || BUSINESS.phones[1]];
+    if (c.whatsapp) BUSINESS.whatsapp = c.whatsapp;
+    if (c.address) BUSINESS.address = c.address;
+    if (c.hours) BUSINESS.hours = c.hours;
+    BUSINESS.social = {
+      facebook: c.facebook_url || "",
+      instagram: c.instagram_url || "",
+      youtube: c.youtube_url || "",
+      google: c.google_url || "",
+    };
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function applyPageContent(pageKey) {
+  try {
+    const client = getClient();
+    if (!client) return;
+    const { data, error } = await client.from("page_content").select("content").eq("page_key", pageKey).single();
+    if (error || !data || !data.content) return;
+    Object.entries(data.content).forEach(([key, value]) => {
+      document.querySelectorAll(`[data-ck="${key}"]`).forEach(el => { el.innerHTML = value; });
+    });
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// ---------------------------------------------------------------
+// 2.6. PAGE BOOTSTRAP — replaces the old "renderNav(); renderFooter();"
+//      calls at the bottom of each page with one call that also loads
+//      business info, page content, and the map where needed.
+//      Usage: <script>initSite({ activePage: 'home', pageKey: 'home', map: true });</script>
+// ---------------------------------------------------------------
+async function initSite(opts = {}) {
+  const { activePage = "", pageKey = null, map = false } = opts;
+  await loadBusinessInfo();
+  await loadBranding();
+  renderNav(activePage);
+  renderFooter();
+  if (pageKey) applyPageContent(pageKey);
+  if (map) renderMap("map-root");
+}
+
+// ---------------------------------------------------------------
+// 3.5. OFFICE MAP — location is managed from /admin (site_settings table),
+//      not hardcoded here, so it can be updated without touching code.
+// ---------------------------------------------------------------
+async function renderMap(containerId) {
+  const root = document.getElementById(containerId);
+  if (!root) return;
+  root.innerHTML = `<p style="color:var(--ink-soft);">Loading map...</p>`;
+
+  try {
+    const client = getClient();
+    if (!client) throw new Error("not configured");
+    const { data, error } = await client.from("site_settings").select("*").eq("id", 1).single();
+    if (error) throw error;
+
+    const { latitude, longitude, business_address } = data;
+    if (latitude == null || longitude == null) {
+      root.innerHTML = `<p style="color:var(--ink-soft);">${business_address || BUSINESS.address}</p>`;
+      return;
+    }
+
+    const embedSrc = `https://www.google.com/maps?q=${latitude},${longitude}&z=15&output=embed`;
+    const directionsHref = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+
+    root.innerHTML = `
+      <div style="border:1px solid var(--line);border-radius:6px;overflow:hidden;">
+        <iframe
+          src="${embedSrc}"
+          width="100%"
+          height="320"
+          style="border:0;display:block;"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          title="Shree Shyam Services office location">
+        </iframe>
+      </div>
+      <p style="margin:12px 0 0;color:var(--ink-soft);">${business_address || BUSINESS.address}</p>
+      <a href="${directionsHref}" target="_blank" rel="noopener" class="btn btn-outline" style="margin-top:8px;display:inline-flex;">Get Directions</a>
+    `;
+  } catch (err) {
+    // Fall back to plain text address if the map/settings can't be loaded
+    root.innerHTML = `<p style="color:var(--ink-soft);">${BUSINESS.address}</p>`;
+    console.error(err);
+  }
+}
+
+// ---------------------------------------------------------------
+// 4. NAV
 // ---------------------------------------------------------------
 function renderNav(activePage = "") {
   const root = document.getElementById("nav-root");
   if (!root) return;
   const wa = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent("Hi, I need help with an appliance repair.")}`;
+  const brandMarkHtml = BRANDING.logo_url
+    ? `<img src="${BRANDING.logo_url}" alt="${BUSINESS.name} logo" style="width:40px;height:40px;border-radius:10px;object-fit:cover;">`
+    : `<span class="brand-mark">SS</span>`;
   root.innerHTML = `
   <header class="site-header">
     <div class="topbar">
@@ -48,12 +187,13 @@ function renderNav(activePage = "") {
         </div>
         <div class="topbar-links">
           <a href="/areas-we-serve.html">Dwarka &amp; West Delhi</a>
+          ${topbarSocialIconsHtml()}
         </div>
       </div>
     </div>
     <nav class="container navwrap">
       <a href="/index.html" class="brand">
-        <span class="brand-mark">SS</span>
+        ${brandMarkHtml}
         <span class="brand-text">Shree Shyam Services<span>Appliance Repair &amp; AMC</span></span>
       </a>
       <ul class="nav-links">
@@ -66,15 +206,40 @@ function renderNav(activePage = "") {
       </ul>
       <div class="nav-cta">
         <a href="${wa}" class="btn btn-wa" style="padding:9px 16px;font-size:0.88rem;">WhatsApp</a>
-        <a href="/book-service.html" class="btn btn-primary" style="padding:9px 18px;font-size:0.88rem;">Book Service</a>
+        <a href="/pay.html" class="btn btn-outline-gold" style="padding:9px 16px;font-size:0.88rem;">Pay Now</a>
+        <a href="/book-service.html" class="btn btn-navy" style="padding:9px 18px;font-size:0.88rem;">Book Service</a>
       </div>
     </nav>
   </header>`;
 }
 
 // ---------------------------------------------------------------
-// 4. FOOTER
+// 5. FOOTER
 // ---------------------------------------------------------------
+const SOCIAL_ICONS = {
+  facebook: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M13.5 21v-8h2.7l.4-3.1h-3.1V8c0-.9.25-1.5 1.55-1.5H16.7V3.7c-.28-.04-1.24-.12-2.36-.12-2.33 0-3.93 1.42-3.93 4.03V10H7.7v3.1h2.7V21h3.1z"/></svg>`,
+  instagram: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><circle cx="12" cy="12" r="3.7"/><circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none"/></svg>`,
+  youtube: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M22 12s0-3.2-.4-4.7c-.24-.9-.94-1.6-1.83-1.84C18.2 5 12 5 12 5s-6.2 0-7.77.46c-.9.24-1.6.94-1.83 1.84C2 8.8 2 12 2 12s0 3.2.4 4.7c.24.9.94 1.6 1.83 1.84C5.8 19 12 19 12 19s6.2 0 7.77-.46c.9-.24 1.6-.94 1.83-1.84C22 15.2 22 12 22 12zM10 15.2V8.8L15.5 12 10 15.2z"/></svg>`,
+  google: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2.2l1.9 5.8h6.1l-4.9 3.6 1.9 5.8-4.9-3.6-4.9 3.6 1.9-5.8-4.9-3.6h6.1z"/></svg>`,
+};
+const SOCIAL_LABELS = { facebook: "Facebook", instagram: "Instagram", youtube: "YouTube", google: "Google Reviews" };
+
+function socialIconsHtml() {
+  const links = Object.entries(BUSINESS.social || {}).filter(([, url]) => url);
+  if (links.length === 0) return "";
+  return `<div class="social-links">${links.map(([key, url]) =>
+    `<a href="${url}" target="_blank" rel="noopener" aria-label="${SOCIAL_LABELS[key]}">${SOCIAL_ICONS[key]}</a>`
+  ).join("")}</div>`;
+}
+
+function topbarSocialIconsHtml() {
+  const links = Object.entries(BUSINESS.social || {}).filter(([, url]) => url);
+  if (links.length === 0) return "";
+  return `<span class="topbar-social">${links.map(([key, url]) =>
+    `<a href="${url}" target="_blank" rel="noopener" aria-label="${SOCIAL_LABELS[key]}">${SOCIAL_ICONS[key]}</a>`
+  ).join("")}</span>`;
+}
+
 function renderFooter() {
   const root = document.getElementById("footer-root");
   if (!root) return;
@@ -87,6 +252,7 @@ function renderFooter() {
           <h4>${BUSINESS.name}</h4>
           <p style="color:#C7D2D0;font-size:0.9rem;max-width:32ch;">Local appliance repair for AC, refrigerator and washing machine — same-day service across Dwarka and West Delhi.</p>
           <p style="color:#C7D2D0;font-size:0.9rem;">${BUSINESS.address}</p>
+          ${socialIconsHtml()}
         </div>
         <div>
           <h4>Services</h4>
@@ -105,7 +271,8 @@ function renderFooter() {
             <li><a href="/pricing.html">Pricing</a></li>
             <li><a href="/areas-we-serve.html">Areas We Serve</a></li>
             <li><a href="/contact.html">Contact</a></li>
-            <li><a href="/blog/index.html">Blog</a></li>
+            <li><a href="/pay.html">Pay Online</a></li>
+            <!-- Blog link removed until /blog/ content is actually built — was 404ing on every page -->
           </ul>
         </div>
         <div>
@@ -124,11 +291,11 @@ function renderFooter() {
       </div>
     </div>
   </footer>
-  <a href="https://wa.me/${BUSINESS.whatsapp}" class="wa-float" aria-label="Chat on WhatsApp">💬</a>`;
+  <a href="https://wa.me/${BUSINESS.whatsapp}" class="wa-float" aria-label="Chat on WhatsApp"><span class="wa-icon">💬</span> Chat with us</a>`;
 }
 
 // ---------------------------------------------------------------
-// 5. BOOKING FORM — inserts into Supabase `bookings` table
+// 6. BOOKING FORM — inserts into Supabase `bookings` table
 // ---------------------------------------------------------------
 async function handleBookingSubmit(e) {
   e.preventDefault();
@@ -191,7 +358,7 @@ async function handleBookingSubmit(e) {
 }
 
 // ---------------------------------------------------------------
-// 6. CONTACT FORM — inserts into Supabase `contact_messages` table
+// 7. CONTACT FORM — inserts into Supabase `contact_messages` table
 // ---------------------------------------------------------------
 async function handleContactSubmit(e) {
   e.preventDefault();
