@@ -17,14 +17,34 @@
   .status-in-progress{background:#DCEBFB;color:#1F5C8A;}
   .status-completed{background:#E6F2E9;color:#1F5C33;}
   .status-cancelled{background:#EAEAEA;color:#666;}
+  .status-unread{background:#FBEAE6;color:#9C3620;}
+  .status-read{background:#DCEBFB;color:#1F5C8A;}
+  .status-replied{background:#E6F2E9;color:#1F5C33;}
+  .pay-pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:6px;}
+  .pay-pill.paid{background:#E6F2E9;color:#1F5C33;}
+  .pay-pill.unpaid{background:#EAEAEA;color:#666;}
+  .link-btn{background:transparent;border:1px solid var(--line);color:var(--teal);padding:4px 9px;font-size:0.72rem;border-radius:3px;cursor:pointer;font-weight:600;}
+  .link-btn:hover{background:var(--teal);color:#fff;}
+  .link-btn.paid{background:#E6F2E9;color:#1F5C33;border-color:#B8DEC2;}
+  .link-btn.paid:hover{background:#1F5C33;color:#fff;}
+  .link-btn.unpaid{background:#EAEAEA;color:#666;border-color:var(--line);}
+  .link-btn.unpaid:hover{background:#666;color:#fff;}
+  .qr-preview-img{width:90px;height:90px;object-fit:contain;border:1px solid var(--line);border-radius:6px;background:#fff;display:block;margin-bottom:6px;}
+  .qr-remove-btn{background:none;border:none;color:#9C3620;font-size:0.75rem;cursor:pointer;text-decoration:underline;padding:0;}
+  .tab-row{display:flex;gap:8px;margin-bottom:20px;}
+  .tab-btn{background:#fff;border:1px solid var(--line);padding:8px 18px;border-radius:20px;font-size:0.85rem;cursor:pointer;font-weight:600;color:var(--ink-soft);}
+  .tab-btn.active{background:var(--teal);color:#fff;border-color:var(--teal);}
+  .mini-input{width:100%;padding:5px 7px;font-size:0.82rem;margin:0;border:1px solid var(--line);border-radius:3px;}
+  .save-hint{font-size:0.7rem;color:#1F5C33;opacity:0;transition:opacity .3s;}
+  .save-hint.show{opacity:1;}
   table{width:100%;border-collapse:collapse;background:#fff;font-size:0.9rem;}
   th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;}
-  th{background:var(--paper-dim);font-family:'Space Grotesk',sans-serif;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--teal);}
+  th{background:var(--paper-dim);font-family:var(--font-display);font-size:0.78rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--teal);}
   select.status-select{margin:0;padding:6px 8px;font-size:0.82rem;}
   .login-wrap{max-width:380px;margin:80px auto;}
   .stat-row{display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap;}
   .stat{background:#fff;border:1px solid var(--line);padding:16px 20px;border-radius:4px;}
-  .stat strong{display:block;font-family:'Space Grotesk',sans-serif;font-size:1.6rem;color:var(--teal);}
+  .stat strong{display:block;font-family:var(--font-display);font-size:1.6rem;color:var(--teal);}
   .stat span{font-size:0.78rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.04em;}
 </style>
 </head>
@@ -55,29 +75,172 @@
   <div class="container" style="padding:32px 24px;">
     <div class="stat-row" id="stat-row"></div>
 
-    <div style="margin-bottom:16px;">
-      <label for="filter-status" style="display:inline;margin-right:8px;">Filter:</label>
-      <select id="filter-status" style="width:auto;display:inline-block;margin-bottom:0;">
-        <option value="all">All Bookings</option>
-        <option value="new">New</option>
-        <option value="confirmed">Confirmed</option>
-        <option value="in-progress">In Progress</option>
-        <option value="completed">Completed</option>
-        <option value="cancelled">Cancelled</option>
-      </select>
+    <div class="tab-row">
+      <button class="tab-btn active" data-tab="bookings-tab" id="tab-btn-bookings">Bookings</button>
+      <button class="tab-btn" data-tab="messages-tab" id="tab-btn-messages">Contact Messages</button>
+      <button class="tab-btn" data-tab="location-tab" id="tab-btn-location">Office Location</button>
+      <button class="tab-btn" data-tab="payment-tab" id="tab-btn-payment">Payment Settings</button>
+      <button class="tab-btn" data-tab="content-tab" id="tab-btn-content">Site Content</button>
+      <button class="tab-btn" data-tab="branding-tab" id="tab-btn-branding">Branding</button>
     </div>
 
-    <div style="overflow-x:auto;">
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th><th>Received</th><th>Customer</th><th>Service</th><th>Address / Area</th><th>Preferred</th><th>Notes</th><th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="bookings-body">
-          <tr><td colspan="8" class="text-center">Loading...</td></tr>
-        </tbody>
-      </table>
+    <div id="bookings-tab">
+      <div style="margin-bottom:16px;">
+        <label for="filter-status" style="display:inline;margin-right:8px;">Filter:</label>
+        <select id="filter-status" style="width:auto;display:inline-block;margin-bottom:0;">
+          <option value="all">All Bookings</option>
+          <option value="new">New</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="in-progress">In Progress</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th><th>Received</th><th>Customer</th><th>Service</th><th>Address / Area</th><th>Preferred</th><th>Notes</th><th>Status</th><th>Technician</th><th>Amount (₹)</th><th>Admin Notes</th><th>Payment</th>
+            </tr>
+          </thead>
+          <tbody id="bookings-body">
+            <tr><td colspan="12" class="text-center">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="messages-tab" style="display:none;">
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Received</th><th>Name</th><th>Phone</th><th>Message</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="messages-body">
+            <tr><td colspan="5" class="text-center">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="location-tab" style="display:none;max-width:520px;">
+      <div class="form-card">
+        <p style="color:var(--ink-soft);font-size:0.88rem;margin-bottom:20px;">
+          This updates the office address and map pin shown on the Contact and
+          Areas We Serve pages. Get latitude/longitude by right-clicking your
+          location on Google Maps and copying the numbers shown.
+        </p>
+        <div id="location-msg" class="form-msg"></div>
+        <form id="location-form">
+          <label for="loc-address">Office Address</label>
+          <textarea id="loc-address" rows="2"></textarea>
+          <div class="form-row-2">
+            <div>
+              <label for="loc-lat">Latitude</label>
+              <input type="number" id="loc-lat" step="any" placeholder="e.g. 28.5921">
+            </div>
+            <div>
+              <label for="loc-lng">Longitude</label>
+              <input type="number" id="loc-lng" step="any" placeholder="e.g. 77.0460">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Save Location</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="payment-tab" style="display:none;max-width:520px;">
+      <div class="form-card">
+        <p style="color:var(--ink-soft);font-size:0.88rem;margin-bottom:20px;">
+          These details power the <strong>/pay.html</strong> page (UPI QR, bank
+          transfer, PayTM). Leave a section blank to hide that card on the
+          payment page — e.g. leave Bank fields empty if you don't want to
+          offer NEFT transfers.
+        </p>
+        <div id="payment-settings-msg" class="form-msg"></div>
+        <form id="payment-settings-form">
+          <label for="pay-upi-id">UPI ID</label>
+          <input type="text" id="pay-upi-id" placeholder="e.g. yourname@upi">
+          <label for="pay-upi-name">UPI Payee Name (shown to payer)</label>
+          <input type="text" id="pay-upi-name" placeholder="e.g. Shree Shyam Services">
+
+          <label for="pay-upi-qr">UPI QR Code Image (optional)</label>
+          <p style="font-size:0.78rem;color:var(--ink-soft);margin:-8px 0 8px;">
+            Upload your own QR (e.g. from your bank/UPI app) to show that exact
+            image instead of the auto-generated one. Note: an uploaded image is
+            static — it won't auto-fill the amount like the generated QR does.
+          </p>
+          <div id="upi-qr-preview" style="margin-bottom:10px;"></div>
+          <input type="file" id="pay-upi-qr" accept="image/*">
+
+          <label for="pay-paytm">PayTM Number</label>
+          <input type="text" id="pay-paytm" placeholder="e.g. +91 95994 59187">
+
+          <label for="pay-paytm-qr">PayTM QR Code Image (optional)</label>
+          <div id="paytm-qr-preview" style="margin-bottom:10px;"></div>
+          <input type="file" id="pay-paytm-qr" accept="image/*">
+
+          <label for="pay-bank-name" style="margin-top:14px;">Bank Name</label>
+          <input type="text" id="pay-bank-name">
+          <div class="form-row-2">
+            <div>
+              <label for="pay-account-no">Account Number</label>
+              <input type="text" id="pay-account-no">
+            </div>
+            <div>
+              <label for="pay-ifsc">IFSC Code</label>
+              <input type="text" id="pay-ifsc">
+            </div>
+          </div>
+          <label for="pay-account-name">Account Holder Name</label>
+          <input type="text" id="pay-account-name">
+          <button type="submit" class="btn btn-primary btn-block">Save Payment Settings</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="content-tab" style="display:none;max-width:640px;">
+      <div class="form-card">
+        <p style="color:var(--ink-soft);font-size:0.88rem;margin-bottom:20px;">
+          Every piece of text on the site is listed here by page. Pick a page,
+          edit any field, and save — changes go live immediately, no code or
+          redeploy needed. Fields containing <code>&lt;br/&gt;</code> or similar
+          tags are raw HTML; leave those tags as-is unless you mean to change
+          formatting. (Legal pages — Terms &amp; Privacy Policy — aren't editable
+          here; ask your developer if those need changes.)
+        </p>
+        <label for="content-page-select">Page</label>
+        <select id="content-page-select"></select>
+        <div id="content-msg" class="form-msg"></div>
+        <div id="content-fields" style="margin-bottom:18px;"></div>
+        <button type="button" id="content-save-btn" class="btn btn-primary btn-block">Save Page Content</button>
+      </div>
+    </div>
+
+    <div id="branding-tab" style="display:none;max-width:520px;">
+      <div class="form-card">
+        <p style="color:var(--ink-soft);font-size:0.88rem;margin-bottom:20px;">
+          Upload your logo and favicon here. Both update instantly across the
+          whole site, no redeploy needed. Recommended: a square image (at
+          least 128×128px) for both — logo works best on a transparent or
+          solid background, favicon should be simple since it displays tiny
+          in browser tabs.
+        </p>
+        <div id="branding-msg" class="form-msg"></div>
+
+        <label>Logo</label>
+        <p style="font-size:0.78rem;color:var(--ink-soft);margin:-8px 0 8px;">Shown in the header next to your business name. Leave unset to keep the "SS" text badge.</p>
+        <div id="logo-preview" style="margin-bottom:10px;"></div>
+        <input type="file" id="logo-upload" accept="image/*">
+
+        <label style="margin-top:18px;">Favicon</label>
+        <p style="font-size:0.78rem;color:var(--ink-soft);margin:-8px 0 8px;">Shown in the browser tab. A simple square icon works best.</p>
+        <div id="favicon-preview" style="margin-bottom:10px;"></div>
+        <input type="file" id="favicon-upload" accept="image/*">
+      </div>
     </div>
   </div>
 </div>
@@ -121,6 +284,26 @@ async function showDashboard() {
   document.getElementById('login-view').style.display = 'none';
   document.getElementById('dashboard-view').style.display = 'block';
   await loadBookings();
+  await loadMessages();
+  await loadLocation();
+  await loadPaymentSettings();
+  await loadBrandingTab();
+  initContentTab();
+}
+
+document.getElementById('tab-btn-bookings').addEventListener('click', () => switchTab('bookings-tab', 'tab-btn-bookings'));
+document.getElementById('tab-btn-messages').addEventListener('click', () => switchTab('messages-tab', 'tab-btn-messages'));
+document.getElementById('tab-btn-location').addEventListener('click', () => switchTab('location-tab', 'tab-btn-location'));
+document.getElementById('tab-btn-payment').addEventListener('click', () => switchTab('payment-tab', 'tab-btn-payment'));
+document.getElementById('tab-btn-content').addEventListener('click', () => switchTab('content-tab', 'tab-btn-content'));
+document.getElementById('tab-btn-branding').addEventListener('click', () => switchTab('branding-tab', 'tab-btn-branding'));
+
+const ALL_TABS = ['bookings-tab', 'messages-tab', 'location-tab', 'payment-tab', 'content-tab', 'branding-tab'];
+const ALL_TAB_BTNS = ['tab-btn-bookings', 'tab-btn-messages', 'tab-btn-location', 'tab-btn-payment', 'tab-btn-content', 'tab-btn-branding'];
+
+function switchTab(tabId, btnId) {
+  ALL_TABS.forEach(id => document.getElementById(id).style.display = (id === tabId ? 'block' : 'none'));
+  ALL_TAB_BTNS.forEach(id => document.getElementById(id).classList.toggle('active', id === btnId));
 }
 
 async function loadBookings() {
@@ -131,7 +314,7 @@ async function loadBookings() {
 
   const tbody = document.getElementById('bookings-body');
   if (error) {
-    tbody.innerHTML = `<tr><td colspan="8">Couldn't load bookings — check that your login has admin access (see supabase/schema.sql setup steps).</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="12">Couldn't load bookings — check that your login has admin access (see supabase/schema.sql setup steps).</td></tr>`;
     return;
   }
   allBookings = data;
@@ -152,21 +335,27 @@ function renderStats(data) {
   `;
 }
 
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str == null ? '' : str;
+  return d.innerHTML;
+}
+
 function renderTable(data) {
   const tbody = document.getElementById('bookings-body');
   if (data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" class="text-center">No bookings yet.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="12" class="text-center">No bookings yet.</td></tr>`;
     return;
   }
   tbody.innerHTML = data.map(b => `
     <tr>
       <td>#${b.id}</td>
       <td>${new Date(b.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</td>
-      <td><strong>${b.customer_name}</strong><br><a href="tel:${b.phone}">${b.phone}</a></td>
-      <td>${b.service_type}${b.appliance_brand ? '<br><span style="color:var(--ink-soft);">' + b.appliance_brand + '</span>' : ''}</td>
-      <td>${b.address}<br><span style="color:var(--ink-soft);">${b.area || ''}</span></td>
+      <td><strong>${esc(b.customer_name)}</strong><br><a href="tel:${b.phone}">${esc(b.phone)}</a></td>
+      <td>${esc(b.service_type)}${b.appliance_brand ? '<br><span style="color:var(--ink-soft);">' + esc(b.appliance_brand) + '</span>' : ''}</td>
+      <td>${esc(b.address)}<br><span style="color:var(--ink-soft);">${esc(b.area || '')}</span></td>
       <td>${b.preferred_date || '—'}<br>${b.preferred_slot || ''}</td>
-      <td style="max-width:200px;">${b.notes || '—'}</td>
+      <td style="max-width:200px;">${esc(b.notes || '—')}</td>
       <td>
         <select class="status-select" data-id="${b.id}">
           ${['new','confirmed','in-progress','completed','cancelled'].map(s =>
@@ -174,8 +363,59 @@ function renderTable(data) {
           ).join('')}
         </select>
       </td>
+      <td style="min-width:120px;">
+        <input class="mini-input tech-input" data-id="${b.id}" value="${esc(b.assigned_technician || '')}" placeholder="Name">
+      </td>
+      <td style="min-width:90px;">
+        <input class="mini-input amount-input" type="number" data-id="${b.id}" value="${b.final_amount != null ? b.final_amount : ''}" placeholder="0">
+      </td>
+      <td style="min-width:150px;">
+        <input class="mini-input notes-input" data-id="${b.id}" value="${esc(b.admin_notes || '')}" placeholder="Internal notes">
+        <span class="save-hint" data-hint-id="${b.id}">Saved</span>
+      </td>
+      <td style="min-width:150px;">
+        <button type="button" class="link-btn pay-pill-btn ${b.payment_status === 'paid' ? 'paid' : 'unpaid'}" data-id="${b.id}" title="Click to toggle paid/unpaid">
+          ${b.payment_status === 'paid' ? 'Paid' + (b.amount_paid ? ' ₹' + b.amount_paid : '') : 'Unpaid'}
+        </button><br>
+        <button type="button" class="link-btn copy-link-btn" data-id="${b.id}" style="margin-top:6px;">Copy Payment Link</button>
+      </td>
     </tr>
   `).join('');
+
+  document.querySelectorAll('.pay-pill-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const id = e.target.getAttribute('data-id');
+      const b = allBookings.find(x => x.id == id);
+      if (!b) return;
+      const nowPaid = b.payment_status !== 'paid';
+      const update = { payment_status: nowPaid ? 'paid' : 'unpaid' };
+      if (nowPaid && !b.amount_paid && b.final_amount) update.amount_paid = b.final_amount;
+      if (!nowPaid) update.amount_paid = null;
+      const { error } = await client.from('bookings').update(update).eq('id', id);
+      if (error) { alert('Could not update: ' + error.message); return; }
+      loadBookings();
+    });
+  });
+
+  document.querySelectorAll('.copy-link-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.target.getAttribute('data-id');
+      const b = allBookings.find(x => x.id == id);
+      if (!b) return;
+      if (!b.final_amount) {
+        alert('Set the Amount (₹) field for this booking first, then copy the link.');
+        return;
+      }
+      const url = new URL('/pay.html', location.origin);
+      url.searchParams.set('booking', b.id);
+      url.searchParams.set('amount', b.final_amount);
+      url.searchParams.set('purpose', 'final-payment');
+      navigator.clipboard.writeText(url.toString()).then(() => {
+        e.target.textContent = 'Copied!';
+        setTimeout(() => { e.target.textContent = 'Copy Payment Link'; }, 1500);
+      }).catch(() => alert('Could not copy — here is the link:\n' + url.toString()));
+    });
+  });
 
   document.querySelectorAll('.status-select').forEach(sel => {
     sel.addEventListener('change', async (e) => {
@@ -186,6 +426,82 @@ function renderTable(data) {
       else loadBookings();
     });
   });
+
+  // Technician / amount / admin notes save on blur (no button needed, no full reload
+  // so the admin doesn't lose their place while typing)
+  document.querySelectorAll('.tech-input, .amount-input, .notes-input').forEach(input => {
+    input.addEventListener('blur', async (e) => {
+      const id = e.target.getAttribute('data-id');
+      const field = e.target.classList.contains('tech-input') ? 'assigned_technician'
+                  : e.target.classList.contains('amount-input') ? 'final_amount' : 'admin_notes';
+      let value = e.target.value.trim();
+      if (field === 'final_amount') value = value === '' ? null : Number(value);
+      if (field !== 'final_amount' && value === '') value = null;
+      const { error } = await client.from('bookings').update({ [field]: value }).eq('id', id);
+      const hint = document.querySelector(`.save-hint[data-hint-id="${id}"]`);
+      if (error) {
+        alert('Could not save: ' + error.message);
+      } else if (hint) {
+        hint.classList.add('show');
+        setTimeout(() => hint.classList.remove('show'), 1200);
+        const b = allBookings.find(x => x.id == id);
+        if (b) b[field] = value;
+      }
+    });
+  });
+}
+
+// ---------------------------------------------------------------
+// CONTACT MESSAGES
+// ---------------------------------------------------------------
+let allMessages = [];
+
+async function loadMessages() {
+  const { data, error } = await client
+    .from('contact_messages')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  const tbody = document.getElementById('messages-body');
+  if (error) {
+    tbody.innerHTML = `<tr><td colspan="5">Couldn't load messages — ${esc(error.message)}</td></tr>`;
+    return;
+  }
+  allMessages = data;
+  renderMessages(data);
+}
+
+function renderMessages(data) {
+  const tbody = document.getElementById('messages-body');
+  if (data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center">No messages yet.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map(m => `
+    <tr>
+      <td>${new Date(m.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</td>
+      <td><strong>${esc(m.name)}</strong></td>
+      <td><a href="tel:${esc(m.phone)}">${esc(m.phone)}</a></td>
+      <td style="max-width:280px;">${esc(m.message)}</td>
+      <td>
+        <select class="msg-status-select" data-id="${m.id}">
+          ${['unread','read','replied'].map(s =>
+            `<option value="${s}" ${m.status === s ? 'selected' : ''}>${s}</option>`
+          ).join('')}
+        </select>
+      </td>
+    </tr>
+  `).join('');
+
+  document.querySelectorAll('.msg-status-select').forEach(sel => {
+    sel.addEventListener('change', async (e) => {
+      const id = e.target.getAttribute('data-id');
+      const newStatus = e.target.value;
+      const { error } = await client.from('contact_messages').update({ status: newStatus }).eq('id', id);
+      if (error) alert('Could not update status: ' + error.message);
+      else loadMessages();
+    });
+  });
 }
 
 document.getElementById('filter-status').addEventListener('change', (e) => {
@@ -194,7 +510,316 @@ document.getElementById('filter-status').addEventListener('change', (e) => {
   renderTable(filtered);
 });
 
+// ---------------------------------------------------------------
+// OFFICE LOCATION
+// ---------------------------------------------------------------
+async function loadLocation() {
+  const { data, error } = await client.from('site_settings').select('*').eq('id', 1).single();
+  if (error) {
+    console.error(error);
+    return;
+  }
+  document.getElementById('loc-address').value = data.business_address || '';
+  document.getElementById('loc-lat').value = data.latitude ?? '';
+  document.getElementById('loc-lng').value = data.longitude ?? '';
+}
+
+document.getElementById('location-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('location-msg');
+  msg.className = 'form-msg';
+  const business_address = document.getElementById('loc-address').value.trim();
+  const latRaw = document.getElementById('loc-lat').value.trim();
+  const lngRaw = document.getElementById('loc-lng').value.trim();
+  const latitude = latRaw === '' ? null : Number(latRaw);
+  const longitude = lngRaw === '' ? null : Number(lngRaw);
+
+  const { error } = await client
+    .from('site_settings')
+    .update({ business_address, latitude, longitude, updated_at: new Date().toISOString() })
+    .eq('id', 1);
+
+  if (error) {
+    msg.classList.add('err');
+    msg.textContent = 'Could not save: ' + error.message;
+  } else {
+    msg.classList.add('ok');
+    msg.textContent = 'Location saved — updated on the Contact and Areas We Serve pages.';
+  }
+});
+
+// ---------------------------------------------------------------
+// PAYMENT SETTINGS (UPI / Bank / PayTM shown on /pay.html)
+// ---------------------------------------------------------------
+async function loadPaymentSettings() {
+  const { data, error } = await client.from('site_settings').select('*').eq('id', 1).single();
+  if (error) {
+    console.error(error);
+    return;
+  }
+  document.getElementById('pay-upi-id').value = data.upi_id || '';
+  document.getElementById('pay-upi-name').value = data.upi_payee_name || '';
+  document.getElementById('pay-paytm').value = data.paytm_number || '';
+  document.getElementById('pay-bank-name').value = data.bank_name || '';
+  document.getElementById('pay-account-no').value = data.account_number || '';
+  document.getElementById('pay-ifsc').value = data.ifsc_code || '';
+  document.getElementById('pay-account-name').value = data.account_holder_name || '';
+  renderQrPreview('upi-qr-preview', data.upi_qr_url, 'upi_qr_url');
+  renderQrPreview('paytm-qr-preview', data.paytm_qr_url, 'paytm_qr_url');
+}
+
+function renderQrPreview(containerId, url, field) {
+  const el = document.getElementById(containerId);
+  if (!url) {
+    el.innerHTML = `<p style="font-size:0.78rem;color:var(--ink-soft);">No custom QR uploaded — showing the auto-generated one.</p>`;
+    return;
+  }
+  el.innerHTML = `
+    <img src="${url}" class="qr-preview-img" alt="Uploaded QR preview">
+    <button type="button" class="qr-remove-btn" data-field="${field}">Remove uploaded QR</button>
+  `;
+  el.querySelector('.qr-remove-btn').addEventListener('click', async () => {
+    const { error } = await client.from('site_settings').update({ [field]: null }).eq('id', 1);
+    if (error) { alert('Could not remove: ' + error.message); return; }
+    loadPaymentSettings();
+  });
+}
+
+async function uploadQrFile(file, prefix) {
+  const ext = file.name.split('.').pop();
+  const path = `qr/${prefix}-${Date.now()}.${ext}`;
+  const { error: uploadError } = await client.storage.from('site-assets').upload(path, file, { upsert: true });
+  if (uploadError) throw uploadError;
+  const { data } = client.storage.from('site-assets').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+document.getElementById('pay-upi-qr').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const msg = document.getElementById('payment-settings-msg');
+  msg.className = 'form-msg';
+  try {
+    const url = await uploadQrFile(file, 'upi');
+    const { error } = await client.from('site_settings').update({ upi_qr_url: url }).eq('id', 1);
+    if (error) throw error;
+    renderQrPreview('upi-qr-preview', url, 'upi_qr_url');
+    msg.classList.add('ok');
+    msg.textContent = 'UPI QR uploaded and saved.';
+  } catch (err) {
+    msg.classList.add('err');
+    msg.textContent = 'Upload failed: ' + err.message;
+  }
+  e.target.value = '';
+});
+
+document.getElementById('pay-paytm-qr').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const msg = document.getElementById('payment-settings-msg');
+  msg.className = 'form-msg';
+  try {
+    const url = await uploadQrFile(file, 'paytm');
+    const { error } = await client.from('site_settings').update({ paytm_qr_url: url }).eq('id', 1);
+    if (error) throw error;
+    renderQrPreview('paytm-qr-preview', url, 'paytm_qr_url');
+    msg.classList.add('ok');
+    msg.textContent = 'PayTM QR uploaded and saved.';
+  } catch (err) {
+    msg.classList.add('err');
+    msg.textContent = 'Upload failed: ' + err.message;
+  }
+  e.target.value = '';
+});
+
+// ---------------------------------------------------------------
+// BRANDING (logo / favicon)
+// ---------------------------------------------------------------
+async function loadBrandingTab() {
+  const { data, error } = await client.from('site_settings').select('logo_url, favicon_url').eq('id', 1).single();
+  if (error) { console.error(error); return; }
+  renderBrandingPreview('logo-preview', data.logo_url, 'logo_url', 'No logo uploaded — showing the "SS" text badge.', 'Remove logo');
+  renderBrandingPreview('favicon-preview', data.favicon_url, 'favicon_url', 'No favicon uploaded — browser tab shows the default icon.', 'Remove favicon');
+}
+
+function renderBrandingPreview(containerId, url, field, emptyText, removeText) {
+  const el = document.getElementById(containerId);
+  if (!url) {
+    el.innerHTML = `<p style="font-size:0.78rem;color:var(--ink-soft);">${emptyText}</p>`;
+    return;
+  }
+  el.innerHTML = `
+    <img src="${url}" class="qr-preview-img" alt="Preview">
+    <button type="button" class="qr-remove-btn" data-field="${field}">${removeText}</button>
+  `;
+  el.querySelector('.qr-remove-btn').addEventListener('click', async () => {
+    const { error } = await client.from('site_settings').update({ [field]: null }).eq('id', 1);
+    if (error) { alert('Could not remove: ' + error.message); return; }
+    loadBrandingTab();
+  });
+}
+
+document.getElementById('logo-upload').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const msg = document.getElementById('branding-msg');
+  msg.className = 'form-msg';
+  try {
+    const url = await uploadQrFile(file, 'logo');
+    const { error } = await client.from('site_settings').update({ logo_url: url }).eq('id', 1);
+    if (error) throw error;
+    renderBrandingPreview('logo-preview', url, 'logo_url', '', 'Remove logo');
+    msg.classList.add('ok');
+    msg.textContent = 'Logo uploaded — live on the site now.';
+  } catch (err) {
+    msg.classList.add('err');
+    msg.textContent = 'Upload failed: ' + err.message;
+  }
+  e.target.value = '';
+});
+
+document.getElementById('favicon-upload').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const msg = document.getElementById('branding-msg');
+  msg.className = 'form-msg';
+  try {
+    const url = await uploadQrFile(file, 'favicon');
+    const { error } = await client.from('site_settings').update({ favicon_url: url }).eq('id', 1);
+    if (error) throw error;
+    renderBrandingPreview('favicon-preview', url, 'favicon_url', '', 'Remove favicon');
+    msg.classList.add('ok');
+    msg.textContent = 'Favicon uploaded — live on the site now.';
+  } catch (err) {
+    msg.classList.add('err');
+    msg.textContent = 'Upload failed: ' + err.message;
+  }
+  e.target.value = '';
+});
+
+document.getElementById('payment-settings-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('payment-settings-msg');
+  msg.className = 'form-msg';
+
+  const update = {
+    upi_id: document.getElementById('pay-upi-id').value.trim() || null,
+    upi_payee_name: document.getElementById('pay-upi-name').value.trim() || null,
+    paytm_number: document.getElementById('pay-paytm').value.trim() || null,
+    bank_name: document.getElementById('pay-bank-name').value.trim() || null,
+    account_number: document.getElementById('pay-account-no').value.trim() || null,
+    ifsc_code: document.getElementById('pay-ifsc').value.trim() || null,
+    account_holder_name: document.getElementById('pay-account-name').value.trim() || null,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error } = await client.from('site_settings').update(update).eq('id', 1);
+
+  if (error) {
+    msg.classList.add('err');
+    msg.textContent = 'Could not save: ' + error.message;
+  } else {
+    msg.classList.add('ok');
+    msg.textContent = 'Payment settings saved — live on /pay.html now.';
+  }
+});
+
 checkSession();
+</script>
+
+<script>
+// ---------------------------------------------------------------
+// SITE CONTENT (generic CMS editor) — works for any page_key/field
+// without needing custom code per page. See applyPageContent() in
+// main.js and the page_content table in supabase/schema.sql.
+// ---------------------------------------------------------------
+const CONTENT_PAGES = [
+  { key: 'business_info', label: 'Business Info (phone, address, hours)' },
+  { key: 'home', label: 'Homepage' },
+  { key: 'about', label: 'About Page' },
+  { key: 'pricing', label: 'Pricing Page' },
+  { key: 'contact', label: 'Contact Page' },
+  { key: 'areas', label: 'Areas We Serve Page' },
+  { key: 'services_index', label: 'Services Overview Page' },
+  { key: 'service_ac_repair', label: 'AC Repair Page' },
+  { key: 'service_ac_installation', label: 'AC Installation Page' },
+  { key: 'service_amc', label: 'AMC Page' },
+  { key: 'service_fridge_repair', label: 'Refrigerator Repair Page' },
+  { key: 'service_washing_machine', label: 'Washing Machine Repair Page' },
+];
+
+let currentContentPageKey = null;
+
+function initContentTab() {
+  const sel = document.getElementById('content-page-select');
+  if (sel.options.length === 0) {
+    sel.innerHTML = CONTENT_PAGES.map(p => `<option value="${p.key}">${p.label}</option>`).join('');
+    sel.addEventListener('change', (e) => loadPageContentEditor(e.target.value));
+    loadPageContentEditor(sel.value);
+  }
+}
+
+function humanizeContentKey(key) {
+  return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).replace(/\bUrl\b/g, 'URL');
+}
+
+function escapeAttr(str) {
+  const d = document.createElement('div');
+  d.textContent = str == null ? '' : str;
+  return d.innerHTML;
+}
+
+async function loadPageContentEditor(pageKey) {
+  currentContentPageKey = pageKey;
+  const container = document.getElementById('content-fields');
+  const msg = document.getElementById('content-msg');
+  msg.className = 'form-msg';
+  container.innerHTML = `<p style="color:var(--ink-soft);">Loading...</p>`;
+
+  const { data, error } = await client.from('page_content').select('content').eq('page_key', pageKey).single();
+  if (error || !data) {
+    container.innerHTML = `<p style="color:var(--ink-soft);">No content found for this page yet.</p>`;
+    return;
+  }
+  const content = data.content || {};
+  const entries = Object.entries(content);
+  if (entries.length === 0) {
+    container.innerHTML = `<p style="color:var(--ink-soft);">This page has no editable fields yet.</p>`;
+    return;
+  }
+  container.innerHTML = entries.map(([key, value]) => {
+    const isLong = (value || '').length > 60 || (value || '').includes('<') || (value || '').includes('\n');
+    const label = humanizeContentKey(key);
+    if (isLong) {
+      return `<label>${label}</label><textarea data-content-key="${key}" rows="3">${escapeAttr(value)}</textarea>`;
+    }
+    return `<label>${label}</label><input type="text" data-content-key="${key}" value="${escapeAttr(value)}">`;
+  }).join('');
+}
+
+document.getElementById('content-save-btn').addEventListener('click', async () => {
+  const msg = document.getElementById('content-msg');
+  msg.className = 'form-msg';
+  const container = document.getElementById('content-fields');
+  const fields = container.querySelectorAll('[data-content-key]');
+  if (fields.length === 0) return;
+
+  const update = {};
+  fields.forEach(el => { update[el.getAttribute('data-content-key')] = el.value; });
+
+  const { error } = await client
+    .from('page_content')
+    .update({ content: update, updated_at: new Date().toISOString() })
+    .eq('page_key', currentContentPageKey);
+
+  if (error) {
+    msg.classList.add('err');
+    msg.textContent = 'Could not save: ' + error.message;
+  } else {
+    msg.classList.add('ok');
+    msg.textContent = 'Saved — live on the site now.';
+  }
+});
 </script>
 </body>
 </html>
