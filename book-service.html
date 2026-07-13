@@ -100,6 +100,10 @@
 
 <div id="footer-root"></div>
 <script src="/assets/js/main.js"></script>
-<script>renderNav(''); renderFooter();</script>
+<script>
+  initSite({ activePage: '' });
+  // Don't let customers pick a past date for preferred service date
+  document.getElementById('preferred_date').min = new Date().toISOString().split('T')[0];
+</script>
 </body>
 </html>

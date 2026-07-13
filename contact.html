@@ -13,8 +13,8 @@
 
 <section class="section-tight section-dim">
   <div class="container">
-    <span class="eyebrow">Contact</span>
-    <h1>Get in touch</h1>
+    <span class="eyebrow" data-ck="contact_hero_eyebrow">Contact</span>
+    <h1 data-ck="contact_hero_title">Get in touch</h1>
   </div>
 </section>
 
@@ -27,6 +27,8 @@
       <p>B1/46 Bharat Vihar, Kakrola,<br>near Deepika International School,<br>Sector 14, Dwarka, New Delhi</p>
       <h3>Hours</h3>
       <p>10:00 AM – 10:00 PM, all 7 days</p>
+      <h3>Find Us</h3>
+      <div id="map-root"></div>
     </div>
     <div class="form-card">
       <div id="contact-msg" class="form-msg"></div>
@@ -45,6 +47,6 @@
 
 <div id="footer-root"></div>
 <script src="/assets/js/main.js"></script>
-<script>renderNav('contact'); renderFooter();</script>
+<script>initSite({ activePage: 'contact', pageKey: 'contact', map: true });</script>
 </body>
 </html>
