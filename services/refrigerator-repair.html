@@ -6,6 +6,7 @@
 <title>Refrigerator Repair in Dwarka | Shree Shyam Services</title>
 <meta name="description" content="Refrigerator not cooling, gas leak, compressor issue? Same-day fridge repair in Dwarka & West Delhi. ₹199 visit charge, 30-day warranty.">
 <link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div id="nav-root"></div>
@@ -13,9 +14,9 @@
 <section class="hero" style="min-height:auto;">
   <div class="container" style="grid-template-columns:1fr;padding-top:48px;padding-bottom:48px;">
     <div>
-      <span class="eyebrow" style="color:var(--brass);">Refrigerator Repair</span>
-      <h1>Refrigerator Repair — Dwarka &amp; West Delhi</h1>
-      <p class="lead">Single-door, double-door, or side-by-side — not cooling, gas leaks, compressor noise or ice build-up, diagnosed and quoted on the spot.</p>
+      <span class="eyebrow" style="color:var(--brass);" data-ck="svc_fridge_eyebrow">Refrigerator Repair</span>
+      <h1 data-ck="svc_fridge_title">Refrigerator Repair — Dwarka &amp; West Delhi</h1>
+      <p class="lead" data-ck="svc_fridge_lead">Single-door, double-door, or side-by-side — not cooling, gas leaks, compressor noise or ice build-up, diagnosed and quoted on the spot.</p>
       <div class="hero-actions">
         <a href="/book-service.html" class="btn btn-primary">Book Fridge Repair</a>
         <a href="https://wa.me/919599459187" class="btn btn-ghost-light">Ask on WhatsApp</a>
@@ -26,33 +27,33 @@
 
 <section class="section">
   <div class="container">
-    <h2>Common refrigerator problems we fix</h2>
+    <h2 data-ck="svc_fridge_problems_heading">Common refrigerator problems we fix</h2>
     <div class="grid grid-3">
-      <div class="card"><h3>Not Cooling</h3><p>Low gas, faulty thermostat, or blocked vents.</p></div>
-      <div class="card"><h3>Water Leaking</h3><p>Blocked defrost drain or door seal issue.</p></div>
-      <div class="card"><h3>Excess Frost/Ice</h3><p>Defrost heater or timer fault.</p></div>
-      <div class="card"><h3>Compressor Noise</h3><p>Worn compressor or loose mounting.</p></div>
-      <div class="card"><h3>Freezer Not Freezing</h3><p>Gas leak or compressor performance drop.</p></div>
-      <div class="card"><h3>Door Not Sealing</h3><p>Worn gasket replacement.</p></div>
+      <div class="card"><h3 data-ck="svc_fridge_problem_1_title">Not Cooling</h3><p data-ck="svc_fridge_problem_1_desc">Low gas, faulty thermostat, or blocked vents.</p></div>
+      <div class="card"><h3 data-ck="svc_fridge_problem_2_title">Water Leaking</h3><p data-ck="svc_fridge_problem_2_desc">Blocked defrost drain or door seal issue.</p></div>
+      <div class="card"><h3 data-ck="svc_fridge_problem_3_title">Excess Frost/Ice</h3><p data-ck="svc_fridge_problem_3_desc">Defrost heater or timer fault.</p></div>
+      <div class="card"><h3 data-ck="svc_fridge_problem_4_title">Compressor Noise</h3><p data-ck="svc_fridge_problem_4_desc">Worn compressor or loose mounting.</p></div>
+      <div class="card"><h3 data-ck="svc_fridge_problem_5_title">Freezer Not Freezing</h3><p data-ck="svc_fridge_problem_5_desc">Gas leak or compressor performance drop.</p></div>
+      <div class="card"><h3 data-ck="svc_fridge_problem_6_title">Door Not Sealing</h3><p data-ck="svc_fridge_problem_6_desc">Worn gasket replacement.</p></div>
     </div>
   </div>
 </section>
 
 <section class="section section-dim">
   <div class="container">
-    <h2>Pricing</h2>
+    <h2 data-ck="svc_fridge_pricing_heading">Pricing</h2>
     <div class="grid grid-3">
       <div class="card card-price">
-        <div class="unit">Diagnosis / General Check</div>
-        <div class="amount">₹299<span class="unit">+</span></div>
+        <div class="unit" data-ck="svc_fridge_price_1_label">Diagnosis / General Check</div>
+        <div class="amount" data-ck="svc_fridge_price_1_amount">₹299<span class="unit">+</span></div>
       </div>
       <div class="card card-price">
-        <div class="unit">Gas Charging</div>
-        <div class="amount">₹1,800 – ₹2,800</div>
+        <div class="unit" data-ck="svc_fridge_price_2_label">Gas Charging</div>
+        <div class="amount" data-ck="svc_fridge_price_2_amount">₹1,800 – ₹2,800</div>
       </div>
       <div class="card card-price">
-        <div class="unit">Compressor Repair/Replace</div>
-        <div class="amount">₹3,500 – ₹6,000</div>
+        <div class="unit" data-ck="svc_fridge_price_3_label">Compressor Repair/Replace</div>
+        <div class="amount" data-ck="svc_fridge_price_3_amount">₹3,500 – ₹6,000</div>
         <ul><li>Genuine part cost extra</li></ul>
       </div>
     </div>
@@ -62,13 +63,13 @@
 
 <section class="section-tight text-center section-teal">
   <div class="container">
-    <h2>Book your refrigerator technician now</h2>
+    <h2 data-ck="svc_fridge_cta_heading">Book your refrigerator technician now</h2>
     <a href="/book-service.html" class="btn btn-primary">Book Service</a>
   </div>
 </section>
 
 <div id="footer-root"></div>
 <script src="/assets/js/main.js"></script>
-<script>renderNav('services'); renderFooter();</script>
+<script>initSite({ activePage: 'services', pageKey: 'service_fridge_repair' });</script>
 </body>
 </html>

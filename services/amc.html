@@ -6,6 +6,7 @@
 <title>AC Annual Maintenance Contract (AMC) | Shree Shyam Services</title>
 <meta name="description" content="AC AMC plans in Dwarka & West Delhi. Two scheduled services a year, waived visit charge, priority booking.">
 <link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div id="nav-root"></div>
@@ -13,9 +14,9 @@
 <section class="hero" style="min-height:auto;">
   <div class="container" style="grid-template-columns:1fr;padding-top:48px;padding-bottom:48px;">
     <div>
-      <span class="eyebrow" style="color:var(--brass);">Annual Maintenance Contract</span>
-      <h1>Stop reacting to breakdowns. Get ahead of them.</h1>
-      <p class="lead">Two scheduled services a year, a waived visit charge every time you call us, and priority slots when Delhi's summer gets busy.</p>
+      <span class="eyebrow" style="color:var(--brass);" data-ck="svc_amc_eyebrow">Annual Maintenance Contract</span>
+      <h1 data-ck="svc_amc_title">Stop reacting to breakdowns. Get ahead of them.</h1>
+      <p class="lead" data-ck="svc_amc_lead">Two scheduled services a year, a waived visit charge every time you call us, and priority slots when Delhi's summer gets busy.</p>
       <div class="hero-actions">
         <a href="/book-service.html" class="btn btn-primary">Start AMC</a>
         <a href="https://wa.me/919599459187" class="btn btn-ghost-light">Ask on WhatsApp</a>
@@ -28,8 +29,8 @@
   <div class="container">
     <div class="grid grid-2">
       <div class="card card-price">
-        <div class="unit">1 Split/Window AC</div>
-        <div class="amount">₹1,999<span class="unit">/year</span></div>
+        <div class="unit" data-ck="svc_amc_plan_1_label">1 Split/Window AC</div>
+        <div class="amount" data-ck="svc_amc_plan_1_amount">₹1,999<span class="unit">/year</span></div>
         <ul>
           <li>2 scheduled services a year</li>
           <li>Visit charge waived all year</li>
@@ -38,8 +39,8 @@
         </ul>
       </div>
       <div class="card card-price">
-        <div class="unit">Each Additional AC</div>
-        <div class="amount">₹1,499<span class="unit">/year</span></div>
+        <div class="unit" data-ck="svc_amc_plan_2_label">Each Additional AC</div>
+        <div class="amount" data-ck="svc_amc_plan_2_amount">₹1,499<span class="unit">/year</span></div>
         <ul>
           <li>Same benefits as above</li>
           <li>Ideal for homes with 2+ ACs</li>
@@ -51,24 +52,24 @@
 
 <section class="section section-dim">
   <div class="container">
-    <h2>Why an AMC makes sense before summer</h2>
+    <h2 data-ck="svc_amc_why_heading">Why an AMC makes sense before summer</h2>
     <div class="grid grid-3">
-      <div><h3>Fewer breakdowns</h3><p>Scheduled cleaning catches gas leaks and dirt build-up before they cause a no-cooling emergency.</p></div>
-      <div><h3>Lower electricity bills</h3><p>A clean, well-serviced AC runs more efficiently.</p></div>
-      <div><h3>Skip the queue</h3><p>AMC customers get priority slots during peak summer demand.</p></div>
+      <div><h3 data-ck="svc_amc_why_1_title">Fewer breakdowns</h3><p data-ck="svc_amc_why_1_desc">Scheduled cleaning catches gas leaks and dirt build-up before they cause a no-cooling emergency.</p></div>
+      <div><h3 data-ck="svc_amc_why_2_title">Lower electricity bills</h3><p data-ck="svc_amc_why_2_desc">A clean, well-serviced AC runs more efficiently.</p></div>
+      <div><h3 data-ck="svc_amc_why_3_title">Skip the queue</h3><p data-ck="svc_amc_why_3_desc">AMC customers get priority slots during peak summer demand.</p></div>
     </div>
   </div>
 </section>
 
 <section class="section-tight text-center section-teal">
   <div class="container">
-    <h2>Set up your AMC today</h2>
+    <h2 data-ck="svc_amc_cta_heading">Set up your AMC today</h2>
     <a href="https://wa.me/919599459187" class="btn btn-primary">Talk to Us on WhatsApp</a>
   </div>
 </section>
 
 <div id="footer-root"></div>
 <script src="/assets/js/main.js"></script>
-<script>renderNav('services'); renderFooter();</script>
+<script>initSite({ activePage: 'services', pageKey: 'service_amc' });</script>
 </body>
 </html>
