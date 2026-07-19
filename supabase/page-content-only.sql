@@ -80,7 +80,8 @@ insert into public.page_content (page_key, content) values
     'home_service_4_title', 'AC Installation',
     'home_service_4_desc', 'New split or window AC installation, uninstallation for shifting, copper piping included.',
     'home_service_5_title', 'Annual Maintenance (AMC)',
-    'home_service_5_desc', 'Two scheduled services a year, priority booking, and a waived visit charge for the whole year.',
+    'home_service_5_desc', 'Two scheduled services a year, priority booking, and a waived visit charge for the whole year.'
+  ) || jsonb_build_object(
     'home_service_6_title', 'Not sure what''s wrong?',
     'home_service_6_desc', 'Describe the problem on WhatsApp — we''ll tell you likely cause and rough cost before booking.',
     'home_howit_1_title', '1. Book',
@@ -146,7 +147,8 @@ insert into public.page_content (page_key, content) values
     'pricing_row_8_label', 'Split AC Installation',
     'pricing_row_8_amount', '₹1,499<span class="unit">+</span>',
     'pricing_row_9_label', 'Window AC Installation',
-    'pricing_row_9_amount', '₹799<span class="unit">+</span>',
+    'pricing_row_9_amount', '₹799<span class="unit">+</span>'
+  ) || jsonb_build_object(
     'pricing_row_10_label', 'Split AC Uninstallation',
     'pricing_row_10_amount', '₹599',
     'pricing_row_11_label', 'Window AC Uninstallation',
