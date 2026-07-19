@@ -112,7 +112,7 @@ async function applyPageContent(pageKey) {
 //      Usage: <script>initSite({ activePage: 'home', pageKey: 'home', map: true });</script>
 // ---------------------------------------------------------------
 async function initSite(opts = {}) {
-  const { activePage = "", pageKey = null, map = false, testimonials = false } = opts;
+  const { activePage = "", pageKey = null, map = false, testimonials = false, pricing = null } = opts;
   await loadBusinessInfo();
   await loadBranding();
   renderNav(activePage);
@@ -121,6 +121,7 @@ async function initSite(opts = {}) {
   if (pageKey) applyPageContent(pageKey);
   if (map) renderMap("map-root");
   if (testimonials) renderTestimonials("testimonials-root");
+  if (pricing) renderPricingItems(pricing.containerId, pricing);
 }
 
 // ---------------------------------------------------------------
@@ -148,6 +149,86 @@ function applyContactLinks() {
     el.href = `tel:${phone.replace(/\s/g, "")}`;
     if (el.hasAttribute("data-tel-link-text")) el.textContent = phone;
   });
+}
+
+// ---------------------------------------------------------------
+// PRICING ITEMS — single source of truth for every price shown on
+// the site. Admin manages these once in /admin (Pricing tab); the
+// homepage teaser, each service page, and /pricing.html all render
+// from this same table so a price only ever needs updating in one
+// place. See supabase/pricing-items-only.sql for the table.
+// ---------------------------------------------------------------
+function renderPriceCard(item) {
+  return `
+    <div class="card card-price">
+      <div class="unit">${escHtml(item.item_label)}</div>
+      <div class="amount">${escHtml(item.price_text)}</div>
+      ${item.description ? `<p style="font-size:0.85rem;color:var(--ink-soft);">${escHtml(item.description)}</p>` : ""}
+    </div>
+  `;
+}
+
+// For pages with a richer custom layout per price (e.g. AMC's bullet lists)
+// that can't just use a generic card grid, this fills specific label/amount
+// element IDs in order from the matching service_page's pricing_items.
+async function fillPricingSlots(servicePage, slots) {
+  try {
+    const client = getClient();
+    if (!client) throw new Error("not configured");
+    const { data, error } = await client
+      .from("pricing_items")
+      .select("*")
+      .eq("service_page", servicePage)
+      .order("sort_order", { ascending: true });
+    if (error) throw error;
+    (data || []).forEach((item, i) => {
+      if (!slots[i]) return;
+      const labelEl = document.getElementById(slots[i].labelId);
+      const amountEl = document.getElementById(slots[i].amountId);
+      if (labelEl) labelEl.textContent = item.item_label;
+      if (amountEl) amountEl.textContent = item.price_text;
+    });
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function renderPricingItems(containerId, opts = {}) {
+  const root = document.getElementById(containerId);
+  if (!root) return;
+  try {
+    const client = getClient();
+    if (!client) throw new Error("not configured");
+    let query = client.from("pricing_items").select("*").order("category", { ascending: true }).order("sort_order", { ascending: true });
+    if (opts.servicePage) query = query.eq("service_page", opts.servicePage);
+    if (opts.homepageOnly) query = query.eq("show_on_homepage", true);
+    const { data, error } = await query;
+    if (error) throw error;
+    let items = data || [];
+    if (opts.limit) items = items.slice(0, opts.limit);
+    if (items.length === 0) return;
+
+    if (opts.groupByCategory) {
+      const categories = [];
+      const byCat = {};
+      items.forEach(it => {
+        if (!byCat[it.category]) { byCat[it.category] = []; categories.push(it.category); }
+        byCat[it.category].push(it);
+      });
+      root.innerHTML = categories.map((cat, i) => `
+        <section class="section${i % 2 === 1 ? " section-dim" : ""}">
+          <div class="container">
+            <h2>${escHtml(cat)}</h2>
+            <div class="grid grid-3">${byCat[cat].map(renderPriceCard).join("")}</div>
+          </div>
+        </section>
+      `).join("");
+    } else {
+      root.innerHTML = items.map(renderPriceCard).join("");
+    }
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 // ---------------------------------------------------------------
