@@ -49,7 +49,7 @@
     <div class="form-card" style="max-width:640px;margin:40px auto 0;">
       <h3 style="margin-bottom:6px;">Already paid?</h3>
       <p style="font-size:0.9rem;">Send a screenshot of your payment to WhatsApp with your name and booking number (if you have one) — we'll confirm it right away.</p>
-      <a href="https://wa.me/919599459187" class="btn btn-primary btn-block" style="margin-top:6px;">Send Screenshot on WhatsApp</a>
+      <a href="https://wa.me/919599459187" data-wa-link="I just made a payment - here is my screenshot." class="btn btn-primary btn-block" style="margin-top:6px;">Send Screenshot on WhatsApp</a>
     </div>
   </div>
 </section>
@@ -57,8 +57,6 @@
 <div id="footer-root"></div>
 <script src="/assets/js/main.js"></script>
 <script>
-initSite({ activePage: '' });
-
 const params = new URLSearchParams(location.search);
 const bookingId = params.get('booking');
 const amount = params.get('amount');
@@ -138,7 +136,7 @@ async function loadPaymentOptions() {
     }
 
     if (cards.length === 0) {
-      root.innerHTML = `<p class="text-center" style="grid-column:1/-1;color:var(--ink-soft);">Online payment details aren't set up yet — please call or WhatsApp us directly at <a href="tel:+919599459187">+91 95994 59187</a>.</p>`;
+      root.innerHTML = `<p class="text-center" style="grid-column:1/-1;color:var(--ink-soft);">Online payment details aren't set up yet — please call or WhatsApp us directly at <a href="tel:${BUSINESS.phones[0].replace(/\s/g,'')}">${BUSINESS.phones[0]}</a>.</p>`;
       return;
     }
 
@@ -154,12 +152,12 @@ async function loadPaymentOptions() {
       });
     });
   } catch (err) {
-    root.innerHTML = `<p class="text-center" style="grid-column:1/-1;color:var(--ink-soft);">Couldn't load payment details — please call or WhatsApp us at <a href="tel:+919599459187">+91 95994 59187</a>.</p>`;
+    root.innerHTML = `<p class="text-center" style="grid-column:1/-1;color:var(--ink-soft);">Couldn't load payment details — please call or WhatsApp us at <a href="tel:${BUSINESS.phones[0].replace(/\s/g,'')}">${BUSINESS.phones[0]}</a>.</p>`;
     console.error(err);
   }
 }
 
-loadPaymentOptions();
+initSite({ activePage: '' }).then(loadPaymentOptions);
 </script>
 </body>
 </html>
