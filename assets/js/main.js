@@ -7,8 +7,8 @@
 // 1. SUPABASE CONFIG — replace with your project's values.
 //    Find these in Supabase Dashboard > Project Settings > API
 // ---------------------------------------------------------------
-const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL"; // e.g. https://xxxxx.supabase.co
-const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY"; // the eyJ... anon/public key
+const SUPABASE_URL = "https://yyhjtynqjrcodnnzlkfm.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5aGp0eW5xanJjb2Rubnpsa2ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1NTY4OTYsImV4cCI6MjA5OTEzMjg5Nn0.-JxwpNg8_Fx5523hLpZayXt7tl2-oAI_EkF0PgHdzX8";
 
 // Loaded via CDN script tag in each page (see <head>), exposes window.supabase
 let sb = null;
@@ -117,8 +117,36 @@ async function initSite(opts = {}) {
   await loadBranding();
   renderNav(activePage);
   renderFooter();
+  applyContactLinks();
   if (pageKey) applyPageContent(pageKey);
   if (map) renderMap("map-root");
+}
+
+// ---------------------------------------------------------------
+// 2.7. CONTACT LINKS — any WhatsApp/phone link elsewhere on a page
+//      (hero CTAs, service pages, pay page, etc.) can opt into staying
+//      in sync with the business_info CMS record by adding:
+//        data-wa-link            -> WhatsApp link, default greeting
+//        data-wa-link="Custom message"  -> WhatsApp link, custom greeting
+//        data-tel-link="0"       -> tel: link to phones[0] (primary)
+//        data-tel-link="1"       -> tel: link to phones[1] (secondary)
+//        data-tel-link-text      -> (add alongside data-tel-link) also
+//                                   replaces the link's visible text
+//      The href in the HTML source is just a static fallback in case
+//      Supabase is unreachable or JS fails to load.
+// ---------------------------------------------------------------
+function applyContactLinks() {
+  document.querySelectorAll("[data-wa-link]").forEach(el => {
+    const custom = el.getAttribute("data-wa-link");
+    const text = custom && custom.trim() ? custom : "Hi, I need help with an appliance repair.";
+    el.href = `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(text)}`;
+  });
+  document.querySelectorAll("[data-tel-link]").forEach(el => {
+    const idx = parseInt(el.getAttribute("data-tel-link"), 10) || 0;
+    const phone = BUSINESS.phones[idx] || BUSINESS.phones[0];
+    el.href = `tel:${phone.replace(/\s/g, "")}`;
+    if (el.hasAttribute("data-tel-link-text")) el.textContent = phone;
+  });
 }
 
 // ---------------------------------------------------------------
@@ -196,7 +224,8 @@ function renderNav(activePage = "") {
         ${brandMarkHtml}
         <span class="brand-text">Shree Shyam Services<span>Appliance Repair &amp; AMC</span></span>
       </a>
-      <ul class="nav-links">
+      <button type="button" class="nav-toggle" id="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="nav-links">☰</button>
+      <ul class="nav-links" id="nav-links">
         <li><a href="/index.html" ${activePage==='home'?'class="active"':''}>Home</a></li>
         <li><a href="/about.html" ${activePage==='about'?'class="active"':''}>About</a></li>
         <li><a href="/services/index.html" ${activePage==='services'?'class="active"':''}>Services</a></li>
@@ -205,12 +234,30 @@ function renderNav(activePage = "") {
         <li><a href="/contact.html" ${activePage==='contact'?'class="active"':''}>Contact</a></li>
       </ul>
       <div class="nav-cta">
-        <a href="${wa}" class="btn btn-wa" style="padding:9px 16px;font-size:0.88rem;">WhatsApp</a>
+        <a href="${wa}" data-wa-link class="btn btn-wa" style="padding:9px 16px;font-size:0.88rem;">WhatsApp</a>
         <a href="/pay.html" class="btn btn-outline-gold" style="padding:9px 16px;font-size:0.88rem;">Pay Now</a>
         <a href="/book-service.html" class="btn btn-navy" style="padding:9px 18px;font-size:0.88rem;">Book Service</a>
       </div>
     </nav>
   </header>`;
+
+  const toggleBtn = document.getElementById("nav-toggle");
+  const navLinks = document.getElementById("nav-links");
+  if (toggleBtn && navLinks) {
+    toggleBtn.addEventListener("click", () => {
+      const isOpen = navLinks.classList.toggle("open");
+      toggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      toggleBtn.textContent = isOpen ? "✕" : "☰";
+    });
+    // Close the menu automatically once a link is tapped
+    navLinks.querySelectorAll("a").forEach(a => {
+      a.addEventListener("click", () => {
+        navLinks.classList.remove("open");
+        toggleBtn.setAttribute("aria-expanded", "false");
+        toggleBtn.textContent = "☰";
+      });
+    });
+  }
 }
 
 // ---------------------------------------------------------------
