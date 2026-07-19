@@ -306,6 +306,8 @@ function switchTab(tabId, btnId) {
   ALL_TAB_BTNS.forEach(id => document.getElementById(id).classList.toggle('active', id === btnId));
 }
 
+let currentBookingFilter = 'all';
+
 async function loadBookings() {
   const { data, error } = await client
     .from('bookings')
@@ -319,7 +321,8 @@ async function loadBookings() {
   }
   allBookings = data;
   renderStats(data);
-  renderTable(data);
+  const filtered = currentBookingFilter === 'all' ? data : data.filter(b => b.status === currentBookingFilter);
+  renderTable(filtered);
 }
 
 function renderStats(data) {
@@ -505,8 +508,8 @@ function renderMessages(data) {
 }
 
 document.getElementById('filter-status').addEventListener('change', (e) => {
-  const val = e.target.value;
-  const filtered = val === 'all' ? allBookings : allBookings.filter(b => b.status === val);
+  currentBookingFilter = e.target.value;
+  const filtered = currentBookingFilter === 'all' ? allBookings : allBookings.filter(b => b.status === currentBookingFilter);
   renderTable(filtered);
 });
 
