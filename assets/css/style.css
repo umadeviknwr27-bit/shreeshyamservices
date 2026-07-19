@@ -242,6 +242,14 @@ img{max-width:100%;display:block;}
 .card-price li{padding:6px 0;border-bottom:1px dashed var(--line);color:var(--ink-soft);}
 .card-price li:before{content:"✓ ";color:var(--teal);font-weight:700;}
 
+.testimonial-card{
+  border-top:4px solid var(--teal);
+  font-family:var(--font-body);
+}
+.testimonial-card .stars{color:var(--brass);font-size:1.1rem;letter-spacing:2px;margin-bottom:10px;}
+.testimonial-card .testimonial-quote{color:var(--ink);font-size:0.95rem;line-height:1.6;margin:0 0 14px;}
+.testimonial-card .testimonial-name{font-weight:700;color:var(--teal);font-size:0.88rem;}
+
 /* ---------- Section variants ---------- */
 .section-teal{background:var(--teal);color:#EFE7D2;}
 .section-teal h2{color:#fff;}
