@@ -76,22 +76,8 @@
 
 <section class="section section-dim">
   <div class="container">
-    <h2 data-ck="svc_acinstall_pricing_heading">Pricing</h2>
-    <div class="grid grid-3">
-      <div class="card card-price">
-        <div class="unit" data-ck="svc_acinstall_price_1_label">Split AC Installation</div>
-        <div class="amount" data-ck="svc_acinstall_price_1_amount">₹1,499<span class="unit">+</span></div>
-        <ul><li>Standard copper piping up to 3 ft</li></ul>
-      </div>
-      <div class="card card-price">
-        <div class="unit" data-ck="svc_acinstall_price_2_label">Window AC Installation</div>
-        <div class="amount" data-ck="svc_acinstall_price_2_amount">₹799<span class="unit">+</span></div>
-      </div>
-      <div class="card card-price">
-        <div class="unit" data-ck="svc_acinstall_price_3_label">Uninstallation (Split/Window)</div>
-        <div class="amount" data-ck="svc_acinstall_price_3_amount">₹399 – ₹599</div>
-      </div>
-    </div>
+    <h2>Pricing</h2>
+    <div class="grid grid-3" id="service-pricing-root"></div>
     <p style="margin-top:16px;"><a href="/pricing.html">See full price list →</a></p>
   </div>
 </section>
@@ -105,6 +91,6 @@
 
 <div id="footer-root"></div>
 <script src="/assets/js/main.js"></script>
-<script>initSite({ activePage: 'services', pageKey: 'service_ac_installation' });</script>
+<script>initSite({ activePage: 'services', pageKey: 'service_ac_installation', pricing: { containerId: 'service-pricing-root', servicePage: 'ac-installation' } });</script>
 </body>
 </html>

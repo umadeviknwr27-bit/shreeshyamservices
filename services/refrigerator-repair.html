@@ -76,22 +76,8 @@
 
 <section class="section section-dim">
   <div class="container">
-    <h2 data-ck="svc_fridge_pricing_heading">Pricing</h2>
-    <div class="grid grid-3">
-      <div class="card card-price">
-        <div class="unit" data-ck="svc_fridge_price_1_label">Diagnosis / General Check</div>
-        <div class="amount" data-ck="svc_fridge_price_1_amount">₹299<span class="unit">+</span></div>
-      </div>
-      <div class="card card-price">
-        <div class="unit" data-ck="svc_fridge_price_2_label">Gas Charging</div>
-        <div class="amount" data-ck="svc_fridge_price_2_amount">₹1,800 – ₹2,800</div>
-      </div>
-      <div class="card card-price">
-        <div class="unit" data-ck="svc_fridge_price_3_label">Compressor Repair/Replace</div>
-        <div class="amount" data-ck="svc_fridge_price_3_amount">₹3,500 – ₹6,000</div>
-        <ul><li>Genuine part cost extra</li></ul>
-      </div>
-    </div>
+    <h2>Pricing</h2>
+    <div class="grid grid-3" id="service-pricing-root"></div>
     <p style="margin-top:16px;"><a href="/pricing.html">See full price list →</a></p>
   </div>
 </section>
@@ -105,6 +91,6 @@
 
 <div id="footer-root"></div>
 <script src="/assets/js/main.js"></script>
-<script>initSite({ activePage: 'services', pageKey: 'service_fridge_repair' });</script>
+<script>initSite({ activePage: 'services', pageKey: 'service_fridge_repair', pricing: { containerId: 'service-pricing-root', servicePage: 'refrigerator-repair' } });</script>
 </body>
 </html>

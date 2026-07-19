@@ -76,24 +76,8 @@
 
 <section class="section section-dim">
   <div class="container">
-    <h2 data-ck="svc_acrepair_pricing_heading">Pricing</h2>
-    <div class="grid grid-3">
-      <div class="card card-price">
-        <div class="unit" data-ck="svc_acrepair_price_1_label">General Service — Split AC</div>
-        <div class="amount" data-ck="svc_acrepair_price_1_amount">₹499<span class="unit">+</span></div>
-        <ul><li>Foam jet clean, filter wash</li></ul>
-      </div>
-      <div class="card card-price">
-        <div class="unit" data-ck="svc_acrepair_price_2_label">Gas Refill — Split AC</div>
-        <div class="amount" data-ck="svc_acrepair_price_2_amount">₹2,200<span class="unit">+</span></div>
-        <ul><li>1–1.5 ton, includes leak check</li></ul>
-      </div>
-      <div class="card card-price">
-        <div class="unit" data-ck="svc_acrepair_price_3_label">PCB Repair</div>
-        <div class="amount" data-ck="svc_acrepair_price_3_amount">₹1,500 – ₹3,500</div>
-        <ul><li>Depends on brand &amp; fault</li></ul>
-      </div>
-    </div>
+    <h2>Pricing</h2>
+    <div class="grid grid-3" id="service-pricing-root"></div>
     <p style="margin-top:16px;"><a href="/pricing.html">See full price list, including window AC &amp; compressor repair →</a></p>
   </div>
 </section>
@@ -118,6 +102,6 @@
 
 <div id="footer-root"></div>
 <script src="/assets/js/main.js"></script>
-<script>initSite({ activePage: 'services', pageKey: 'service_ac_repair' });</script>
+<script>initSite({ activePage: 'services', pageKey: 'service_ac_repair', pricing: { containerId: 'service-pricing-root', servicePage: 'ac-repair' } });</script>
 </body>
 </html>
