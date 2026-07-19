@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /pay.html
+
+Sitemap: https://shreeshyamservices.in/sitemap.xml
