@@ -161,28 +161,7 @@
       <h2 data-ck="home_pricing_heading">No surprise bill at the end</h2>
       <p data-ck="home_pricing_subtext">Starting prices for the most common calls we get. Final cost depends on tonnage, brand, and parts needed — always confirmed before work starts.</p>
     </div>
-    <div class="grid grid-4">
-      <div class="card card-price">
-        <div class="unit" data-ck="home_price_1_label">AC Gas Refill</div>
-        <div class="amount" data-ck="home_price_1_amount">₹2,200<span class="unit">+</span></div>
-        <p style="font-size:0.85rem;" data-ck="home_price_1_desc">1.5 ton split, R32/R410A</p>
-      </div>
-      <div class="card card-price">
-        <div class="unit" data-ck="home_price_2_label">AC General Service</div>
-        <div class="amount" data-ck="home_price_2_amount">₹499<span class="unit">+</span></div>
-        <p style="font-size:0.85rem;" data-ck="home_price_2_desc">Split AC, foam jet clean</p>
-      </div>
-      <div class="card card-price">
-        <div class="unit" data-ck="home_price_3_label">Split AC Installation</div>
-        <div class="amount" data-ck="home_price_3_amount">₹1,499<span class="unit">+</span></div>
-        <p style="font-size:0.85rem;" data-ck="home_price_3_desc">Standard copper piping</p>
-      </div>
-      <div class="card card-price">
-        <div class="unit" data-ck="home_price_4_label">Visit / Diagnosis</div>
-        <div class="amount" data-ck="home_price_4_amount">₹199</div>
-        <p style="font-size:0.85rem;" data-ck="home_price_4_desc">Waived if repair is booked</p>
-      </div>
-    </div>
+    <div class="grid grid-4" id="home-pricing-root"></div>
     <div class="text-center" style="margin-top:30px;">
       <a href="/pricing.html" class="btn btn-primary">See Full Price List</a>
     </div>
@@ -226,6 +205,6 @@
 
 <div id="footer-root"></div>
 <script src="/assets/js/main.js"></script>
-<script>initSite({ activePage: 'home', pageKey: 'home', map: true, testimonials: true });</script>
+<script>initSite({ activePage: 'home', pageKey: 'home', map: true, testimonials: true, pricing: { containerId: 'home-pricing-root', homepageOnly: true, limit: 4 } });</script>
 </body>
 </html>
