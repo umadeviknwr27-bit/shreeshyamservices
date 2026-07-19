@@ -112,7 +112,7 @@ async function applyPageContent(pageKey) {
 //      Usage: <script>initSite({ activePage: 'home', pageKey: 'home', map: true });</script>
 // ---------------------------------------------------------------
 async function initSite(opts = {}) {
-  const { activePage = "", pageKey = null, map = false } = opts;
+  const { activePage = "", pageKey = null, map = false, testimonials = false } = opts;
   await loadBusinessInfo();
   await loadBranding();
   renderNav(activePage);
@@ -120,6 +120,7 @@ async function initSite(opts = {}) {
   applyContactLinks();
   if (pageKey) applyPageContent(pageKey);
   if (map) renderMap("map-root");
+  if (testimonials) renderTestimonials("testimonials-root");
 }
 
 // ---------------------------------------------------------------
@@ -147,6 +148,48 @@ function applyContactLinks() {
     el.href = `tel:${phone.replace(/\s/g, "")}`;
     if (el.hasAttribute("data-tel-link-text")) el.textContent = phone;
   });
+}
+
+// ---------------------------------------------------------------
+// TESTIMONIALS — public read-only display of admin-managed customer
+// reviews. Section is hidden entirely if there are no published
+// testimonials yet, rather than showing an empty/awkward block.
+// ---------------------------------------------------------------
+function escHtml(str) {
+  const d = document.createElement("div");
+  d.textContent = str == null ? "" : str;
+  return d.innerHTML;
+}
+
+async function renderTestimonials(containerId) {
+  const root = document.getElementById(containerId);
+  if (!root) return;
+  const section = root.closest("section");
+  try {
+    const client = getClient();
+    if (!client) throw new Error("not configured");
+    const { data, error } = await client
+      .from("testimonials")
+      .select("*")
+      .eq("is_published", true)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    if (!data || data.length === 0) {
+      if (section) section.style.display = "none";
+      return;
+    }
+    root.innerHTML = data.map(t => `
+      <div class="card testimonial-card">
+        <div class="stars" aria-label="${t.rating || 5} out of 5 stars">${"★".repeat(t.rating || 5)}${"☆".repeat(5 - (t.rating || 5))}</div>
+        <p class="testimonial-quote">&ldquo;${escHtml(t.quote)}&rdquo;</p>
+        <div class="testimonial-name">${escHtml(t.customer_name)}${t.service_type ? " · " + escHtml(t.service_type) : ""}</div>
+      </div>
+    `).join("");
+  } catch (err) {
+    if (section) section.style.display = "none";
+    console.error(err);
+  }
 }
 
 // ---------------------------------------------------------------
