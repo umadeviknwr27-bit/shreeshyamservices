@@ -83,6 +83,7 @@
       <button class="tab-btn" data-tab="content-tab" id="tab-btn-content">Site Content</button>
       <button class="tab-btn" data-tab="branding-tab" id="tab-btn-branding">Branding</button>
       <button class="tab-btn" data-tab="testimonials-tab" id="tab-btn-testimonials">Testimonials</button>
+      <button class="tab-btn" data-tab="pricing-tab" id="tab-btn-pricing">Pricing</button>
     </div>
 
     <div id="bookings-tab">
@@ -298,6 +299,73 @@
         </table>
       </div>
     </div>
+
+    <div id="pricing-tab" style="display:none;max-width:960px;">
+      <div class="form-card">
+        <p style="color:var(--ink-soft);font-size:0.88rem;margin-bottom:16px;">
+          This is the one place that controls every price on the site — the homepage
+          teaser, each service's own page, and the full <code>/pricing.html</code> list
+          all read from these same rows. Edit a price here and it updates everywhere
+          it's shown, automatically.
+        </p>
+        <ul style="color:var(--ink-soft);font-size:0.85rem;margin:0 0 20px;padding-left:20px;">
+          <li><strong>Category</strong> groups rows into sections on the Pricing page (e.g. "AC Repair &amp; Service").</li>
+          <li><strong>Show on homepage</strong> — check this for up to ~4 headline prices you want on the homepage teaser.</li>
+          <li><strong>Show on service page</strong> — pick which single service page (if any) should also show this price.</li>
+          <li><strong>Order</strong> controls the sequence within its category — lower numbers show first.</li>
+        </ul>
+        <div id="pricing-item-msg" class="form-msg"></div>
+        <form id="pricing-item-form">
+          <div class="form-row-2">
+            <div>
+              <label for="p-category">Category *</label>
+              <input type="text" id="p-category" list="p-category-list" placeholder="e.g. AC Repair &amp; Service" required>
+              <datalist id="p-category-list"></datalist>
+            </div>
+            <div>
+              <label for="p-order">Order</label>
+              <input type="number" id="p-order" value="0">
+            </div>
+          </div>
+          <div class="form-row-2">
+            <div>
+              <label for="p-label">Service / Item Name *</label>
+              <input type="text" id="p-label" placeholder="e.g. Gas Refill — Split AC" required>
+            </div>
+            <div>
+              <label for="p-price">Price *</label>
+              <input type="text" id="p-price" placeholder="e.g. ₹2,200+ or ₹1,500 – ₹3,500" required>
+            </div>
+          </div>
+          <label for="p-desc">Note (optional, shown as small text under the price)</label>
+          <input type="text" id="p-desc" placeholder="e.g. 1.5 ton split, R32/R410A">
+          <div class="form-row-2">
+            <div style="display:flex;align-items:center;padding-top:8px;">
+              <label style="display:flex;align-items:center;gap:8px;margin:0;">
+                <input type="checkbox" id="p-homepage" style="width:auto;margin:0;">
+                Show on homepage
+              </label>
+            </div>
+            <div>
+              <label for="p-service-page">Show on service page (optional)</label>
+              <select id="p-service-page">
+                <option value="">— None —</option>
+                <option value="ac-repair">AC Repair</option>
+                <option value="ac-installation">AC Installation</option>
+                <option value="amc">AMC</option>
+                <option value="refrigerator-repair">Refrigerator Repair</option>
+                <option value="washing-machine-repair">Washing Machine Repair</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Add Price</button>
+        </form>
+      </div>
+
+      <div id="pricing-items-list" style="margin-top:20px;">
+        <p class="text-center" style="color:var(--ink-soft);">Loading...</p>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -345,6 +413,7 @@ async function showDashboard() {
   await loadPaymentSettings();
   await loadBrandingTab();
   await loadTestimonials();
+  await loadPricingItems();
   initContentTab();
 }
 
@@ -355,9 +424,10 @@ document.getElementById('tab-btn-payment').addEventListener('click', () => switc
 document.getElementById('tab-btn-content').addEventListener('click', () => switchTab('content-tab', 'tab-btn-content'));
 document.getElementById('tab-btn-branding').addEventListener('click', () => switchTab('branding-tab', 'tab-btn-branding'));
 document.getElementById('tab-btn-testimonials').addEventListener('click', () => switchTab('testimonials-tab', 'tab-btn-testimonials'));
+document.getElementById('tab-btn-pricing').addEventListener('click', () => switchTab('pricing-tab', 'tab-btn-pricing'));
 
-const ALL_TABS = ['bookings-tab', 'messages-tab', 'location-tab', 'payment-tab', 'content-tab', 'branding-tab', 'testimonials-tab'];
-const ALL_TAB_BTNS = ['tab-btn-bookings', 'tab-btn-messages', 'tab-btn-location', 'tab-btn-payment', 'tab-btn-content', 'tab-btn-branding', 'tab-btn-testimonials'];
+const ALL_TABS = ['bookings-tab', 'messages-tab', 'location-tab', 'payment-tab', 'content-tab', 'branding-tab', 'testimonials-tab', 'pricing-tab'];
+const ALL_TAB_BTNS = ['tab-btn-bookings', 'tab-btn-messages', 'tab-btn-location', 'tab-btn-payment', 'tab-btn-content', 'tab-btn-branding', 'tab-btn-testimonials', 'tab-btn-pricing'];
 
 function switchTab(tabId, btnId) {
   ALL_TABS.forEach(id => document.getElementById(id).style.display = (id === tabId ? 'block' : 'none'));
@@ -877,6 +947,139 @@ document.getElementById('testimonial-form').addEventListener('submit', async (e)
     e.target.reset();
     document.getElementById('t-published').checked = true;
     loadTestimonials();
+  }
+});
+
+// ---------------------------------------------------------------
+// PRICING ITEMS (single source of truth for every price on the site)
+// ---------------------------------------------------------------
+let allPricingItems = [];
+const SERVICE_PAGE_LABELS = {
+  'ac-repair': 'AC Repair',
+  'ac-installation': 'AC Installation',
+  'amc': 'AMC',
+  'refrigerator-repair': 'Refrigerator Repair',
+  'washing-machine-repair': 'Washing Machine Repair',
+};
+
+async function loadPricingItems() {
+  const { data, error } = await client
+    .from('pricing_items')
+    .select('*')
+    .order('category', { ascending: true })
+    .order('sort_order', { ascending: true });
+
+  const root = document.getElementById('pricing-items-list');
+  if (error) {
+    root.innerHTML = `<p style="color:var(--ink-soft);">Couldn't load prices — ${esc(error.message)}</p>`;
+    return;
+  }
+  allPricingItems = data;
+
+  const categories = [...new Set(data.map(i => i.category))];
+  document.getElementById('p-category-list').innerHTML = categories.map(c => `<option value="${esc(c)}">`).join('');
+
+  renderPricingItemsList(data);
+}
+
+function renderPricingItemsList(data) {
+  const root = document.getElementById('pricing-items-list');
+  if (data.length === 0) {
+    root.innerHTML = `<p class="text-center" style="color:var(--ink-soft);">No prices yet — add your first one above.</p>`;
+    return;
+  }
+  const categories = [];
+  const byCat = {};
+  data.forEach(it => {
+    if (!byCat[it.category]) { byCat[it.category] = []; categories.push(it.category); }
+    byCat[it.category].push(it);
+  });
+
+  root.innerHTML = categories.map(cat => `
+    <div class="form-card" style="margin-bottom:16px;">
+      <h3 style="margin-top:0;">${esc(cat)}</h3>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>Order</th><th>Item</th><th>Price</th><th>Note</th><th>Home?</th><th>Service Page</th><th></th></tr></thead>
+          <tbody>
+            ${byCat[cat].map(it => `
+              <tr data-id="${it.id}">
+                <td><input type="number" class="p-field" data-field="sort_order" value="${it.sort_order}" style="width:64px;"></td>
+                <td><input type="text" class="p-field" data-field="item_label" value="${escapeAttr(it.item_label)}" style="min-width:160px;"></td>
+                <td><input type="text" class="p-field" data-field="price_text" value="${escapeAttr(it.price_text)}" style="min-width:120px;"></td>
+                <td><input type="text" class="p-field" data-field="description" value="${escapeAttr(it.description || '')}" style="min-width:160px;"></td>
+                <td style="text-align:center;"><input type="checkbox" class="p-field" data-field="show_on_homepage" ${it.show_on_homepage ? 'checked' : ''}></td>
+                <td>
+                  <select class="p-field" data-field="service_page">
+                    <option value="">— None —</option>
+                    ${Object.entries(SERVICE_PAGE_LABELS).map(([val, label]) => `<option value="${val}" ${it.service_page === val ? 'selected' : ''}>${label}</option>`).join('')}
+                  </select>
+                </td>
+                <td><button type="button" class="link-btn pricing-delete-btn" data-id="${it.id}">Delete</button></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `).join('');
+
+  root.querySelectorAll('tr[data-id]').forEach(row => {
+    const id = row.getAttribute('data-id');
+    row.querySelectorAll('.p-field').forEach(field => {
+      const eventType = (field.tagName === 'SELECT' || field.type === 'checkbox') ? 'change' : 'blur';
+      field.addEventListener(eventType, async () => {
+        const key = field.getAttribute('data-field');
+        let value;
+        if (field.type === 'checkbox') value = field.checked;
+        else if (field.type === 'number') value = Number(field.value) || 0;
+        else value = field.value;
+        const { error } = await client.from('pricing_items').update({ [key]: value }).eq('id', id);
+        if (error) alert('Could not save: ' + error.message);
+      });
+    });
+  });
+
+  root.querySelectorAll('.pricing-delete-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const id = e.target.getAttribute('data-id');
+      if (!confirm('Delete this price row? This can\'t be undone.')) return;
+      const { error } = await client.from('pricing_items').delete().eq('id', id);
+      if (error) { alert('Could not delete: ' + error.message); return; }
+      loadPricingItems();
+    });
+  });
+}
+
+document.getElementById('pricing-item-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('pricing-item-msg');
+  msg.className = 'form-msg';
+
+  const payload = {
+    category: document.getElementById('p-category').value.trim(),
+    item_label: document.getElementById('p-label').value.trim(),
+    price_text: document.getElementById('p-price').value.trim(),
+    description: document.getElementById('p-desc').value.trim() || null,
+    sort_order: Number(document.getElementById('p-order').value) || 0,
+    show_on_homepage: document.getElementById('p-homepage').checked,
+    service_page: document.getElementById('p-service-page').value || null,
+  };
+  if (!payload.category || !payload.item_label || !payload.price_text) {
+    msg.classList.add('err');
+    msg.textContent = 'Please fill in category, item name, and price.';
+    return;
+  }
+
+  const { error } = await client.from('pricing_items').insert([payload]);
+  if (error) {
+    msg.classList.add('err');
+    msg.textContent = 'Could not save: ' + error.message;
+  } else {
+    msg.classList.add('ok');
+    msg.textContent = 'Price added.';
+    e.target.reset();
+    loadPricingItems();
   }
 });
 
