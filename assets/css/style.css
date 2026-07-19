@@ -122,8 +122,24 @@ img{max-width:100%;display:block;}
 .nav-toggle{display:none;background:none;border:none;font-size:1.6rem;color:var(--teal);cursor:pointer;}
 
 @media (max-width:900px){
-  .nav-links{display:none;}
+  .nav-links{
+    display:none;
+    position:absolute;
+    top:100%;left:0;right:0;
+    flex-direction:column;
+    gap:0;
+    background:var(--paper);
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+    box-shadow:var(--shadow);
+    padding:8px 0;
+    z-index:50;
+  }
+  .nav-links.open{display:flex;}
+  .nav-links a{display:block;padding:12px 24px;border-bottom:none;}
+  .nav-links a:hover, .nav-links a.active{background:var(--paper-dim);}
   .nav-toggle{display:block;}
+  .navwrap{position:relative;}
   .topbar .topbar-links{gap:12px;}
 }
 @media (max-width:480px){
