@@ -536,6 +536,62 @@ set content = content || jsonb_build_object('facebook_url', '', 'instagram_url',
 where page_key = 'business_info' and not (content ? 'facebook_url');
 
 -- ============================================================
+-- TESTIMONIALS — customer reviews shown on the homepage.
+-- Admin-managed (add/edit/delete/publish from the dashboard).
+-- Only published rows are visible to the public; unpublished rows
+-- stay in the admin's list so you can draft one before it goes live.
+-- No sample rows are seeded here on purpose — displaying invented
+-- customer quotes on a live business site would be misleading.
+-- ============================================================
+create table if not exists public.testimonials (
+  id bigint generated always as identity primary key,
+  created_at timestamptz not null default now(),
+  customer_name text not null,
+  service_type text,
+  rating smallint not null default 5 check (rating between 1 and 5),
+  quote text not null,
+  is_published boolean not null default true,
+  sort_order int not null default 0
+);
+
+alter table public.testimonials enable row level security;
+
+create policy "anyone can read published testimonials"
+  on public.testimonials for select
+  to anon, authenticated
+  using (is_published = true);
+
+create policy "admin can read all testimonials"
+  on public.testimonials for select
+  to authenticated
+  using (public.is_admin());
+
+create policy "admin can insert testimonials"
+  on public.testimonials for insert
+  to authenticated
+  with check (public.is_admin());
+
+create policy "admin can update testimonials"
+  on public.testimonials for update
+  to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+create policy "admin can delete testimonials"
+  on public.testimonials for delete
+  to authenticated
+  using (public.is_admin());
+
+-- Adds the homepage section heading to the existing 'home' page_content
+-- row without touching anything else you've already customized.
+update public.page_content
+set content = content || jsonb_build_object(
+  'home_testimonials_eyebrow', 'Customer Reviews',
+  'home_testimonials_heading', 'What our customers say'
+)
+where page_key = 'home' and not (content ? 'home_testimonials_heading');
+
+-- ============================================================
 -- SETUP STEPS (do these after running the SQL above)
 -- ============================================================
 -- 1. In Supabase Dashboard > Authentication > Users, create yourself as a
