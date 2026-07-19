@@ -82,6 +82,7 @@
       <button class="tab-btn" data-tab="payment-tab" id="tab-btn-payment">Payment Settings</button>
       <button class="tab-btn" data-tab="content-tab" id="tab-btn-content">Site Content</button>
       <button class="tab-btn" data-tab="branding-tab" id="tab-btn-branding">Branding</button>
+      <button class="tab-btn" data-tab="testimonials-tab" id="tab-btn-testimonials">Testimonials</button>
     </div>
 
     <div id="bookings-tab">
@@ -242,6 +243,61 @@
         <input type="file" id="favicon-upload" accept="image/*">
       </div>
     </div>
+
+    <div id="testimonials-tab" style="display:none;max-width:720px;">
+      <div class="form-card">
+        <p style="color:var(--ink-soft);font-size:0.88rem;margin-bottom:20px;">
+          Reviews here show on the homepage as soon as you check "Published."
+          Uncheck it to hide one without deleting it (e.g. to hold a draft
+          before it goes live).
+        </p>
+        <div id="testimonial-msg" class="form-msg"></div>
+        <form id="testimonial-form">
+          <div class="form-row-2">
+            <div>
+              <label for="t-name">Customer Name *</label>
+              <input type="text" id="t-name" required>
+            </div>
+            <div>
+              <label for="t-service">Service (optional)</label>
+              <input type="text" id="t-service" placeholder="e.g. AC Repair">
+            </div>
+          </div>
+          <div class="form-row-2">
+            <div>
+              <label for="t-rating">Rating</label>
+              <select id="t-rating">
+                <option value="5">5 stars</option>
+                <option value="4">4 stars</option>
+                <option value="3">3 stars</option>
+                <option value="2">2 stars</option>
+                <option value="1">1 star</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:center;padding-top:26px;">
+              <label style="display:flex;align-items:center;gap:8px;margin:0;">
+                <input type="checkbox" id="t-published" checked style="width:auto;margin:0;">
+                Published (visible on homepage)
+              </label>
+            </div>
+          </div>
+          <label for="t-quote">Review Text *</label>
+          <textarea id="t-quote" rows="3" required></textarea>
+          <button type="submit" class="btn btn-primary btn-block">Add Review</button>
+        </form>
+      </div>
+
+      <div style="overflow-x:auto;margin-top:20px;">
+        <table>
+          <thead>
+            <tr><th>Customer</th><th>Service</th><th>Rating</th><th>Review</th><th>Published</th><th></th></tr>
+          </thead>
+          <tbody id="testimonials-body">
+            <tr><td colspan="6" class="text-center">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -288,6 +344,7 @@ async function showDashboard() {
   await loadLocation();
   await loadPaymentSettings();
   await loadBrandingTab();
+  await loadTestimonials();
   initContentTab();
 }
 
@@ -297,9 +354,10 @@ document.getElementById('tab-btn-location').addEventListener('click', () => swit
 document.getElementById('tab-btn-payment').addEventListener('click', () => switchTab('payment-tab', 'tab-btn-payment'));
 document.getElementById('tab-btn-content').addEventListener('click', () => switchTab('content-tab', 'tab-btn-content'));
 document.getElementById('tab-btn-branding').addEventListener('click', () => switchTab('branding-tab', 'tab-btn-branding'));
+document.getElementById('tab-btn-testimonials').addEventListener('click', () => switchTab('testimonials-tab', 'tab-btn-testimonials'));
 
-const ALL_TABS = ['bookings-tab', 'messages-tab', 'location-tab', 'payment-tab', 'content-tab', 'branding-tab'];
-const ALL_TAB_BTNS = ['tab-btn-bookings', 'tab-btn-messages', 'tab-btn-location', 'tab-btn-payment', 'tab-btn-content', 'tab-btn-branding'];
+const ALL_TABS = ['bookings-tab', 'messages-tab', 'location-tab', 'payment-tab', 'content-tab', 'branding-tab', 'testimonials-tab'];
+const ALL_TAB_BTNS = ['tab-btn-bookings', 'tab-btn-messages', 'tab-btn-location', 'tab-btn-payment', 'tab-btn-content', 'tab-btn-branding', 'tab-btn-testimonials'];
 
 function switchTab(tabId, btnId) {
   ALL_TABS.forEach(id => document.getElementById(id).style.display = (id === tabId ? 'block' : 'none'));
@@ -724,6 +782,101 @@ document.getElementById('payment-settings-form').addEventListener('submit', asyn
   } else {
     msg.classList.add('ok');
     msg.textContent = 'Payment settings saved — live on /pay.html now.';
+  }
+});
+
+// ---------------------------------------------------------------
+// TESTIMONIALS (customer reviews shown on the homepage)
+// ---------------------------------------------------------------
+let allTestimonials = [];
+
+async function loadTestimonials() {
+  const { data, error } = await client
+    .from('testimonials')
+    .select('*')
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: false });
+
+  const tbody = document.getElementById('testimonials-body');
+  if (error) {
+    tbody.innerHTML = `<tr><td colspan="6">Couldn't load reviews — ${esc(error.message)}</td></tr>`;
+    return;
+  }
+  allTestimonials = data;
+  renderTestimonialsTable(data);
+}
+
+function renderTestimonialsTable(data) {
+  const tbody = document.getElementById('testimonials-body');
+  if (data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center">No reviews yet — add your first one above.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map(t => `
+    <tr>
+      <td><strong>${esc(t.customer_name)}</strong></td>
+      <td>${esc(t.service_type || '—')}</td>
+      <td>${'★'.repeat(t.rating)}${'☆'.repeat(5 - t.rating)}</td>
+      <td style="max-width:260px;">${esc(t.quote)}</td>
+      <td>
+        <button type="button" class="link-btn testimonial-pub-btn ${t.is_published ? 'paid' : 'unpaid'}" data-id="${t.id}">
+          ${t.is_published ? 'Published' : 'Hidden'}
+        </button>
+      </td>
+      <td><button type="button" class="link-btn testimonial-delete-btn" data-id="${t.id}">Delete</button></td>
+    </tr>
+  `).join('');
+
+  document.querySelectorAll('.testimonial-pub-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const id = e.target.getAttribute('data-id');
+      const t = allTestimonials.find(x => x.id == id);
+      if (!t) return;
+      const { error } = await client.from('testimonials').update({ is_published: !t.is_published }).eq('id', id);
+      if (error) { alert('Could not update: ' + error.message); return; }
+      loadTestimonials();
+    });
+  });
+
+  document.querySelectorAll('.testimonial-delete-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const id = e.target.getAttribute('data-id');
+      if (!confirm('Delete this review? This can\'t be undone.')) return;
+      const { error } = await client.from('testimonials').delete().eq('id', id);
+      if (error) { alert('Could not delete: ' + error.message); return; }
+      loadTestimonials();
+    });
+  });
+}
+
+document.getElementById('testimonial-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('testimonial-msg');
+  msg.className = 'form-msg';
+
+  const payload = {
+    customer_name: document.getElementById('t-name').value.trim(),
+    service_type: document.getElementById('t-service').value.trim() || null,
+    rating: Number(document.getElementById('t-rating').value),
+    quote: document.getElementById('t-quote').value.trim(),
+    is_published: document.getElementById('t-published').checked,
+  };
+  if (!payload.customer_name || !payload.quote) {
+    msg.classList.add('err');
+    msg.textContent = 'Please fill in the customer name and review text.';
+    return;
+  }
+
+  const { error } = await client.from('testimonials').insert([payload]);
+  if (error) {
+    msg.classList.add('err');
+    msg.textContent = 'Could not save: ' + error.message;
+  } else {
+    msg.classList.add('ok');
+    msg.textContent = 'Review added.';
+    e.target.reset();
+    document.getElementById('t-published').checked = true;
+    loadTestimonials();
   }
 });
 
