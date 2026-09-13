@@ -67,6 +67,50 @@ select * from (values
   ('Washing Machine Repair', 'Drum Motor / Drainage Repair', '₹800 – ₹2,000', null, 16, false, 'washing-machine-repair'),
   ('Washing Machine Repair', 'PCB Repair', '₹1,200 – ₹2,500', null, 17, false, 'washing-machine-repair'),
   ('Annual Maintenance Contract (AMC)', '1 Split/Window AC', '₹1,999/year', null, 18, false, 'amc'),
-  ('Annual Maintenance Contract (AMC)', 'Each Additional AC', '₹1,499/year', null, 19, false, 'amc')
+  ('Annual Maintenance Contract (AMC)', 'Each Additional AC', '₹1,499/year', null, 19, false, 'amc'),
+  ('Geyser / Water Heater Repair', 'Diagnosis / General Check', '₹249+', null, 20, false, 'geyser-repair'),
+  ('Geyser / Water Heater Repair', 'Heating Element Replacement', '₹600 – ₹1,200', 'Genuine part cost extra', 21, false, 'geyser-repair'),
+  ('Geyser / Water Heater Repair', 'Thermostat Replacement', '₹500 – ₹900', null, 22, false, 'geyser-repair'),
+  ('Geyser / Water Heater Repair', 'Tank / Body Leak Repair', '₹800+', null, 23, false, 'geyser-repair'),
+  ('Room Heater Repair', 'Diagnosis / General Check', '₹199+', null, 24, false, 'heater-repair'),
+  ('Room Heater Repair', 'Heating Coil / Element Replacement', '₹400 – ₹900', null, 25, false, 'heater-repair'),
+  ('Room Heater Repair', 'Thermostat / Switch Repair', '₹350 – ₹700', null, 26, false, 'heater-repair'),
+  ('Room Heater Repair', 'Wiring / Plug Repair', '₹250+', null, 27, false, 'heater-repair'),
+  ('Microwave Repair', 'Diagnosis / General Check', '₹249+', null, 28, false, 'microwave-repair'),
+  ('Microwave Repair', 'Magnetron Replacement', '₹1,500 – ₹2,800', 'Genuine part cost extra', 29, false, 'microwave-repair'),
+  ('Microwave Repair', 'Turntable Motor Repair', '₹500 – ₹900', null, 30, false, 'microwave-repair'),
+  ('Microwave Repair', 'Door Latch / Switch Repair', '₹400 – ₹700', null, 31, false, 'microwave-repair')
 ) as v(category, item_label, price_text, description, sort_order, show_on_homepage, service_page)
 where not exists (select 1 from public.pricing_items);
+
+-- ------------------------------------------------------------
+-- Added later: Geyser, Heater and Microwave pricing. Guarded per
+-- service_page (not per-table) so this seeds the 3 new services
+-- even on a site that already has pricing rows from before.
+-- ------------------------------------------------------------
+insert into public.pricing_items (category, item_label, price_text, description, sort_order, show_on_homepage, service_page)
+select * from (values
+  ('Geyser / Water Heater Repair', 'Diagnosis / General Check', '₹249+', null, 20, false, 'geyser-repair'),
+  ('Geyser / Water Heater Repair', 'Heating Element Replacement', '₹600 – ₹1,200', 'Genuine part cost extra', 21, false, 'geyser-repair'),
+  ('Geyser / Water Heater Repair', 'Thermostat Replacement', '₹500 – ₹900', null, 22, false, 'geyser-repair'),
+  ('Geyser / Water Heater Repair', 'Tank / Body Leak Repair', '₹800+', null, 23, false, 'geyser-repair')
+) as v(category, item_label, price_text, description, sort_order, show_on_homepage, service_page)
+where not exists (select 1 from public.pricing_items where service_page = 'geyser-repair');
+
+insert into public.pricing_items (category, item_label, price_text, description, sort_order, show_on_homepage, service_page)
+select * from (values
+  ('Room Heater Repair', 'Diagnosis / General Check', '₹199+', null, 24, false, 'heater-repair'),
+  ('Room Heater Repair', 'Heating Coil / Element Replacement', '₹400 – ₹900', null, 25, false, 'heater-repair'),
+  ('Room Heater Repair', 'Thermostat / Switch Repair', '₹350 – ₹700', null, 26, false, 'heater-repair'),
+  ('Room Heater Repair', 'Wiring / Plug Repair', '₹250+', null, 27, false, 'heater-repair')
+) as v(category, item_label, price_text, description, sort_order, show_on_homepage, service_page)
+where not exists (select 1 from public.pricing_items where service_page = 'heater-repair');
+
+insert into public.pricing_items (category, item_label, price_text, description, sort_order, show_on_homepage, service_page)
+select * from (values
+  ('Microwave Repair', 'Diagnosis / General Check', '₹249+', null, 28, false, 'microwave-repair'),
+  ('Microwave Repair', 'Magnetron Replacement', '₹1,500 – ₹2,800', 'Genuine part cost extra', 29, false, 'microwave-repair'),
+  ('Microwave Repair', 'Turntable Motor Repair', '₹500 – ₹900', null, 30, false, 'microwave-repair'),
+  ('Microwave Repair', 'Door Latch / Switch Repair', '₹400 – ₹700', null, 31, false, 'microwave-repair')
+) as v(category, item_label, price_text, description, sort_order, show_on_homepage, service_page)
+where not exists (select 1 from public.pricing_items where service_page = 'microwave-repair');
