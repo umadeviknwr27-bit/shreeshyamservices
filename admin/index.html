@@ -355,6 +355,9 @@
                 <option value="amc">AMC</option>
                 <option value="refrigerator-repair">Refrigerator Repair</option>
                 <option value="washing-machine-repair">Washing Machine Repair</option>
+                <option value="geyser-repair">Geyser / Water Heater Repair</option>
+                <option value="heater-repair">Room Heater Repair</option>
+                <option value="microwave-repair">Microwave Repair</option>
               </select>
             </div>
           </div>
@@ -960,6 +963,9 @@ const SERVICE_PAGE_LABELS = {
   'amc': 'AMC',
   'refrigerator-repair': 'Refrigerator Repair',
   'washing-machine-repair': 'Washing Machine Repair',
+  'geyser-repair': 'Geyser / Water Heater Repair',
+  'heater-repair': 'Room Heater Repair',
+  'microwave-repair': 'Microwave Repair',
 };
 
 async function loadPricingItems() {
@@ -1116,6 +1122,9 @@ const CONTENT_PAGES = [
   { key: 'service_amc', label: 'AMC Page' },
   { key: 'service_fridge_repair', label: 'Refrigerator Repair Page' },
   { key: 'service_washing_machine', label: 'Washing Machine Repair Page' },
+  { key: 'service_geyser_repair', label: 'Geyser / Water Heater Repair Page' },
+  { key: 'service_heater_repair', label: 'Room Heater Repair Page' },
+  { key: 'service_microwave_repair', label: 'Microwave Repair Page' },
 ];
 
 let currentContentPageKey = null;
