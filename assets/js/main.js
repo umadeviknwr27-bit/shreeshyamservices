@@ -421,7 +421,7 @@ function renderFooter() {
       <div class="footer-grid">
         <div>
           <h4>${BUSINESS.name}</h4>
-          <p style="color:#C7D2D0;font-size:0.9rem;max-width:32ch;">Local appliance repair for AC, refrigerator and washing machine — same-day service across Dwarka and West Delhi.</p>
+          <p style="color:#C7D2D0;font-size:0.9rem;max-width:32ch;">Local appliance repair for AC, refrigerator, washing machine, geyser, heater and microwave — same-day service across Dwarka and West Delhi.</p>
           <p style="color:#C7D2D0;font-size:0.9rem;">${BUSINESS.address}</p>
           ${socialIconsHtml()}
         </div>
@@ -433,6 +433,9 @@ function renderFooter() {
             <li><a href="/services/washing-machine-repair.html">Washing Machine Repair</a></li>
             <li><a href="/services/ac-installation.html">AC Installation</a></li>
             <li><a href="/services/amc.html">Annual Maintenance (AMC)</a></li>
+            <li><a href="/services/geyser-repair.html">Geyser / Water Heater Repair</a></li>
+            <li><a href="/services/heater-repair.html">Room Heater Repair</a></li>
+            <li><a href="/services/microwave-repair.html">Microwave Repair</a></li>
           </ul>
         </div>
         <div>
