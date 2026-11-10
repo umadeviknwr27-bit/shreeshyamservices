@@ -353,6 +353,7 @@ function renderNav(activePage = "") {
         <li><a href="/index.html" ${activePage==='home'?'class="active"':''}>Home</a></li>
         <li><a href="/about.html" ${activePage==='about'?'class="active"':''}>About</a></li>
         <li><a href="/services/index.html" ${activePage==='services'?'class="active"':''}>Services</a></li>
+        <li><a href="/services/scrap-buying.html" ${activePage==='scrap'?'class="active"':''}>Sell Scrap</a></li>
         <li><a href="/pricing.html" ${activePage==='pricing'?'class="active"':''}>Pricing</a></li>
         <li><a href="/areas-we-serve.html" ${activePage==='areas'?'class="active"':''}>Areas We Serve</a></li>
         <li><a href="/contact.html" ${activePage==='contact'?'class="active"':''}>Contact</a></li>
@@ -421,7 +422,7 @@ function renderFooter() {
       <div class="footer-grid">
         <div>
           <h4>${BUSINESS.name}</h4>
-          <p style="color:#C7D2D0;font-size:0.9rem;max-width:32ch;">Local appliance repair for AC, refrigerator, washing machine, geyser, heater and microwave — same-day service across Dwarka and West Delhi.</p>
+          <p style="color:#C7D2D0;font-size:0.9rem;max-width:32ch;">Local appliance repair for AC, refrigerator, washing machine, geyser, heater and microwave — same-day service across Dwarka and West Delhi. We also buy old appliances.</p>
           <p style="color:#C7D2D0;font-size:0.9rem;">${BUSINESS.address}</p>
           ${socialIconsHtml()}
         </div>
@@ -433,6 +434,7 @@ function renderFooter() {
             <li><a href="/services/washing-machine-repair.html">Washing Machine Repair</a></li>
             <li><a href="/services/ac-installation.html">AC Installation</a></li>
             <li><a href="/services/amc.html">Annual Maintenance (AMC)</a></li>
+            <li><a href="/services/scrap-buying.html">Sell Old Appliances</a></li>
             <li><a href="/services/geyser-repair.html">Geyser / Water Heater Repair</a></li>
             <li><a href="/services/heater-repair.html">Room Heater Repair</a></li>
             <li><a href="/services/microwave-repair.html">Microwave Repair</a></li>
@@ -475,6 +477,7 @@ async function handleBookingSubmit(e) {
   e.preventDefault();
   const form = e.target;
   const msgBox = document.getElementById("booking-msg");
+  if (form.website && form.website.value) { msgBox.className = "form-msg ok"; msgBox.textContent = "Booking received!"; return; } // honeypot: bots only
   const submitBtn = form.querySelector('button[type="submit"]');
   msgBox.className = "form-msg";
   msgBox.textContent = "";
@@ -486,7 +489,7 @@ async function handleBookingSubmit(e) {
     appliance_brand: form.appliance_brand.value.trim() || null,
     address: form.address.value.trim(),
     area: form.area.value,
-    preferred_date: form.preferred_date.value,
+    preferred_date: form.preferred_date.value || null,
     preferred_slot: form.preferred_slot.value,
     notes: form.notes.value.trim() || null,
     status: "new",
@@ -539,6 +542,7 @@ async function handleContactSubmit(e) {
   const form = e.target;
   const msgBox = document.getElementById("contact-msg");
   msgBox.className = "form-msg";
+  if (form.website && form.website.value) { msgBox.classList.add("ok"); msgBox.textContent = "Message sent."; return; } // honeypot: bots only
 
   const payload = {
     name: form.name.value.trim(),
@@ -566,7 +570,85 @@ async function handleContactSubmit(e) {
   }
 }
 
+// ---------------------------------------------------------------
+// 6.5 SELL-SCRAP FORM — saved into the same `bookings` table with
+//     service_type 'scrap-ac' | 'scrap-refrigerator' | 'scrap-washing-machine'
+//     | 'scrap-multiple', so it shows up in the existing admin Bookings tab.
+// ---------------------------------------------------------------
+async function handleScrapSubmit(e) {
+  e.preventDefault();
+  const form = e.target;
+  const msgBox = document.getElementById("scrap-msg");
+  const btn = form.querySelector('button[type="submit"]');
+  msgBox.className = "form-msg";
+  msgBox.textContent = "";
+  const f = form.elements;
+  if (f.website && f.website.value) { msgBox.classList.add("ok"); msgBox.textContent = "Request received!"; return; } // honeypot: bots only
+  const files = Array.from(f.photos && f.photos.files ? f.photos.files : []);
+  if (files.length > 3 || files.some(x => x.size > 3 * 1024 * 1024 || !/^image\/(jpeg|png|webp)$/.test(x.type))) {
+    msgBox.classList.add("err");
+    msgBox.textContent = "Please attach at most 3 photos (JPG, PNG or WebP, up to 3 MB each).";
+    return;
+  }
+  const details = [
+    f.age.value && "Age: " + f.age.value,
+    "Condition: " + f.condition.value,
+    f.notes.value.trim() && "Notes: " + f.notes.value.trim(),
+  ].filter(Boolean).join(" | ");
+  const payload = {
+    customer_name: f.customer_name.value.trim(),
+    phone: f.phone.value.trim(),
+    service_type: "scrap-" + f.appliance.value,
+    appliance_brand: f.appliance_brand.value.trim() || null,
+    address: f.address.value.trim(),
+    area: f.area.value,
+    preferred_date: f.preferred_date.value || null,
+    preferred_slot: "morning",
+    notes: details,
+    status: "new",
+  };
+  if (!payload.customer_name || !payload.phone || !f.appliance.value || !f.condition.value || !payload.address) {
+    msgBox.classList.add("err");
+    msgBox.textContent = "Please fill in all required fields.";
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = "Sending...";
+  try {
+    const client = getClient();
+    if (!client) throw new Error("not configured");
+    // Photos go to a private bucket; failures here never block the request itself.
+    const photoPaths = [];
+    const folder = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
+    for (let i = 0; i < files.length; i++) {
+      const ext = files[i].type === "image/png" ? "png" : files[i].type === "image/webp" ? "webp" : "jpg";
+      const path = `${folder}/${i + 1}.${ext}`;
+      const up = await client.storage.from("scrap-photos").upload(path, files[i], { contentType: files[i].type });
+      if (!up.error) photoPaths.push(path);
+    }
+    if (photoPaths.length) payload.photo_paths = photoPaths;
+    const { data, error } = await client.from("bookings").insert([payload]).select();
+    if (error) throw error;
+    msgBox.classList.add("ok");
+    const id = data && data[0] ? data[0].id : "—";
+    msgBox.innerHTML = `Request received! Your reference ID is <strong>#${id}</strong>. We'll call you shortly with a price.`;
+    const waText = encodeURIComponent(`Scrap quote request:\nName: ${payload.customer_name}\nItem: ${f.appliance.options[f.appliance.selectedIndex].text}\nCondition: ${f.condition.value}\nArea: ${payload.area}`);
+    form.reset();
+    const wa = document.getElementById("scrap-wa-confirm");
+    if (wa) { wa.href = `https://wa.me/${BUSINESS.whatsapp}?text=${waText}`; wa.style.display = "inline-flex"; }
+  } catch (err) {
+    msgBox.classList.add("err");
+    msgBox.textContent = "Something went wrong. Please call or WhatsApp us directly — " + BUSINESS.phones[0];
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Request Quote";
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  const scrapForm = document.getElementById("scrap-form");
+  if (scrapForm) scrapForm.addEventListener("submit", handleScrapSubmit);
   const bookingForm = document.getElementById("booking-form");
   if (bookingForm) bookingForm.addEventListener("submit", handleBookingSubmit);
   const contactForm = document.getElementById("contact-form");
