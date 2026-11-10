@@ -84,6 +84,7 @@
       <button class="tab-btn" data-tab="branding-tab" id="tab-btn-branding">Branding</button>
       <button class="tab-btn" data-tab="testimonials-tab" id="tab-btn-testimonials">Testimonials</button>
       <button class="tab-btn" data-tab="pricing-tab" id="tab-btn-pricing">Pricing</button>
+      <button class="tab-btn" data-tab="amc-tab" id="tab-btn-amc">AMC Contracts</button>
     </div>
 
     <div id="bookings-tab">
@@ -300,6 +301,36 @@
       </div>
     </div>
 
+    <div id="amc-tab" style="display:none;">
+      <div class="form-card" style="max-width:none;margin-bottom:20px;">
+        <h3 style="margin-top:0;">Add AMC contract</h3>
+        <form id="amc-form">
+          <div class="form-row-2">
+            <div><label for="amc-name">Customer name *</label><input type="text" id="amc-name" required></div>
+            <div><label for="amc-phone">Phone *</label><input type="tel" id="amc-phone" required></div>
+          </div>
+          <div class="form-row-2">
+            <div><label for="amc-plan">Plan *</label><input type="text" id="amc-plan" list="amc-plan-list" placeholder="e.g. AC Care Plan" required>
+              <datalist id="amc-plan-list"><option value="AC Care Plan"><option value="AC Comprehensive Plan"><option value="Fridge Care Plan"><option value="Fridge Comprehensive Plan"><option value="Washer Care Plan"><option value="Washer Comprehensive Plan"></datalist></div>
+            <div><label for="amc-appliances">Appliances covered</label><input type="text" id="amc-appliances" placeholder="e.g. 2 split ACs — Voltas, LG"></div>
+          </div>
+          <div class="form-row-2">
+            <div><label for="amc-start">Start date *</label><input type="date" id="amc-start" required></div>
+            <div><label for="amc-paid">Amount paid (₹)</label><input type="number" id="amc-paid" placeholder="0"></div>
+          </div>
+          <label for="amc-address">Address</label><input type="text" id="amc-address">
+          <button type="submit" class="btn btn-primary">Save contract</button>
+          <span id="amc-msg" style="margin-left:10px;"></span>
+        </form>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>Customer</th><th>Plan</th><th>Period</th><th>Visits</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="amc-body"><tr><td colspan="6" class="text-center">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
     <div id="pricing-tab" style="display:none;max-width:960px;">
       <div class="form-card">
         <p style="color:var(--ink-soft);font-size:0.88rem;margin-bottom:16px;">
@@ -358,6 +389,7 @@
                 <option value="geyser-repair">Geyser / Water Heater Repair</option>
                 <option value="heater-repair">Room Heater Repair</option>
                 <option value="microwave-repair">Microwave Repair</option>
+                <option value="scrap-buying">Scrap Buying</option>
               </select>
             </div>
           </div>
@@ -428,9 +460,10 @@ document.getElementById('tab-btn-content').addEventListener('click', () => switc
 document.getElementById('tab-btn-branding').addEventListener('click', () => switchTab('branding-tab', 'tab-btn-branding'));
 document.getElementById('tab-btn-testimonials').addEventListener('click', () => switchTab('testimonials-tab', 'tab-btn-testimonials'));
 document.getElementById('tab-btn-pricing').addEventListener('click', () => switchTab('pricing-tab', 'tab-btn-pricing'));
+document.getElementById('tab-btn-amc').addEventListener('click', () => { switchTab('amc-tab', 'tab-btn-amc'); loadAmc(); });
 
-const ALL_TABS = ['bookings-tab', 'messages-tab', 'location-tab', 'payment-tab', 'content-tab', 'branding-tab', 'testimonials-tab', 'pricing-tab'];
-const ALL_TAB_BTNS = ['tab-btn-bookings', 'tab-btn-messages', 'tab-btn-location', 'tab-btn-payment', 'tab-btn-content', 'tab-btn-branding', 'tab-btn-testimonials', 'tab-btn-pricing'];
+const ALL_TABS = ['bookings-tab', 'messages-tab', 'location-tab', 'payment-tab', 'content-tab', 'branding-tab', 'testimonials-tab', 'pricing-tab', 'amc-tab'];
+const ALL_TAB_BTNS = ['tab-btn-bookings', 'tab-btn-messages', 'tab-btn-location', 'tab-btn-payment', 'tab-btn-content', 'tab-btn-branding', 'tab-btn-testimonials', 'tab-btn-pricing', 'tab-btn-amc'];
 
 function switchTab(tabId, btnId) {
   ALL_TABS.forEach(id => document.getElementById(id).style.display = (id === tabId ? 'block' : 'none'));
@@ -507,12 +540,12 @@ function renderTable(data) {
         <input class="mini-input notes-input" data-id="${b.id}" value="${esc(b.admin_notes || '')}" placeholder="Internal notes">
         <span class="save-hint" data-hint-id="${b.id}">Saved</span>
       </td>
-      <td style="min-width:150px;">
+      <td style="min-width:150px;">${(b.service_type || '').startsWith('scrap-') ? `<span style="font-size:0.8rem;color:var(--ink-soft);">Scrap purchase — we pay the customer. Enter the payout in Amount.</span><input class="mini-input seller-input" data-id="${b.id}" value="${esc(b.seller_id_ref || '')}" placeholder="Seller ID ref (e.g. Aadhaar last 4 / DL no.)" style="margin-top:6px;">${b.photo_paths && b.photo_paths.length ? `<br><button type="button" class="link-btn photo-btn" data-id="${b.id}" style="margin-top:6px;">View photos (${b.photo_paths.length})</button>` : ''}` : `
         <button type="button" class="link-btn pay-pill-btn ${b.payment_status === 'paid' ? 'paid' : 'unpaid'}" data-id="${b.id}" title="Click to toggle paid/unpaid">
           ${b.payment_status === 'paid' ? 'Paid' + (b.amount_paid ? ' ₹' + b.amount_paid : '') : 'Unpaid'}
         </button><br>
         <button type="button" class="link-btn copy-link-btn" data-id="${b.id}" style="margin-top:6px;">Copy Payment Link</button>
-      </td>
+      `}</td>
     </tr>
   `).join('');
 
@@ -551,6 +584,15 @@ function renderTable(data) {
     });
   });
 
+  document.querySelectorAll('.photo-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const b = allBookings.find(x => x.id == btn.dataset.id);
+      const { data, error } = await client.storage.from('scrap-photos').createSignedUrls(b.photo_paths, 600);
+      if (error) { alert('Could not load photos: ' + error.message); return; }
+      data.forEach(d => d.signedUrl && window.open(d.signedUrl, '_blank', 'noopener'));
+    });
+  });
+
   document.querySelectorAll('.status-select').forEach(sel => {
     sel.addEventListener('change', async (e) => {
       const id = e.target.getAttribute('data-id');
@@ -563,11 +605,12 @@ function renderTable(data) {
 
   // Technician / amount / admin notes save on blur (no button needed, no full reload
   // so the admin doesn't lose their place while typing)
-  document.querySelectorAll('.tech-input, .amount-input, .notes-input').forEach(input => {
+  document.querySelectorAll('.tech-input, .amount-input, .notes-input, .seller-input').forEach(input => {
     input.addEventListener('blur', async (e) => {
       const id = e.target.getAttribute('data-id');
       const field = e.target.classList.contains('tech-input') ? 'assigned_technician'
-                  : e.target.classList.contains('amount-input') ? 'final_amount' : 'admin_notes';
+                  : e.target.classList.contains('amount-input') ? 'final_amount'
+                  : e.target.classList.contains('seller-input') ? 'seller_id_ref' : 'admin_notes';
       let value = e.target.value.trim();
       if (field === 'final_amount') value = value === '' ? null : Number(value);
       if (field !== 'final_amount' && value === '') value = null;
@@ -584,6 +627,63 @@ function renderTable(data) {
     });
   });
 }
+
+
+// ---------------------------------------------------------------
+// AMC CONTRACTS — start/end dates, visits done (of 2), renewals.
+// Table: public.amc_contracts (admin-only). See supabase/ops-upgrade.sql.
+// ---------------------------------------------------------------
+let allAmc = [];
+const addYear = (d) => { const x = new Date(d + 'T00:00:00'); x.setFullYear(x.getFullYear() + 1); return x.toISOString().split('T')[0]; };
+
+async function loadAmc() {
+  const { data, error } = await client.from('amc_contracts').select('*').order('end_date', { ascending: true });
+  const tbody = document.getElementById('amc-body');
+  if (error) { tbody.innerHTML = `<tr><td colspan="6">Couldn't load contracts — run supabase/ops-upgrade.sql first. (${esc(error.message)})</td></tr>`; return; }
+  allAmc = data;
+  renderAmc();
+}
+
+function renderAmc() {
+  const tbody = document.getElementById('amc-body');
+  if (!allAmc.length) { tbody.innerHTML = '<tr><td colspan="6" class="text-center">No AMC contracts yet.</td></tr>'; return; }
+  const today = new Date(new Date().toISOString().split('T')[0] + 'T00:00:00');
+  tbody.innerHTML = allAmc.map(c => {
+    const days = Math.round((new Date(c.end_date + 'T00:00:00') - today) / 86400000);
+    const cancelled = c.status === 'cancelled';
+    const badge = cancelled ? '<span class="pay-pill unpaid">Cancelled</span>'
+      : days < 0 ? '<span class="pay-pill" style="background:#F8E1E1;color:#8A2020;">Expired ' + (-days) + 'd ago</span>'
+      : days <= 30 ? '<span class="pay-pill" style="background:#FFF1D6;color:#8A5A00;">Renew in ' + days + 'd</span>'
+      : '<span class="pay-pill paid">Active · ' + days + 'd left</span>';
+    const remind = `https://wa.me/${String(c.phone).replace(/\D/g, '').replace(/^(\d{10})$/, '91$1')}?text=${encodeURIComponent('Hi ' + c.customer_name + ', your ' + c.plan + ' with Shree Shyam Services ends on ' + c.end_date + '. Would you like to renew it?')}`;
+    return `<tr>
+      <td><strong>${esc(c.customer_name)}</strong><br><a href="tel:${esc(c.phone)}">${esc(c.phone)}</a><br><span style="color:var(--ink-soft);">${esc(c.address || '')}</span></td>
+      <td>${esc(c.plan)}<br><span style="color:var(--ink-soft);">${esc(c.appliances || '')}</span>${c.amount_paid ? '<br>₹' + c.amount_paid : ''}</td>
+      <td>${c.start_date} → ${c.end_date}</td>
+      <td>${c.visits_done}/${c.visits_total}<br><button type="button" class="link-btn amc-visit" data-id="${c.id}" ${c.visits_done >= c.visits_total ? 'disabled' : ''}>+ Visit done</button></td>
+      <td>${badge}</td>
+      <td><a class="link-btn" href="${remind}" target="_blank" rel="noopener">WhatsApp reminder</a><br>
+        <button type="button" class="link-btn amc-renew" data-id="${c.id}" style="margin-top:6px;">Renew 1 year</button>
+        <button type="button" class="link-btn amc-cancel" data-id="${c.id}" style="margin-top:6px;">Cancel</button></td>
+    </tr>`;
+  }).join('');
+  const upd = async (id, patch) => { const { error } = await client.from('amc_contracts').update(patch).eq('id', id); if (error) alert('Could not save: ' + error.message); else loadAmc(); };
+  tbody.querySelectorAll('.amc-visit').forEach(b => b.addEventListener('click', () => { const c = allAmc.find(x => x.id == b.dataset.id); upd(c.id, { visits_done: c.visits_done + 1 }); }));
+  tbody.querySelectorAll('.amc-renew').forEach(b => b.addEventListener('click', () => { const c = allAmc.find(x => x.id == b.dataset.id); const start = c.end_date; if (confirm('Renew from ' + start + ' to ' + addYear(start) + '? Visits reset to 0.')) upd(c.id, { start_date: start, end_date: addYear(start), visits_done: 0, status: 'active' }); }));
+  tbody.querySelectorAll('.amc-cancel').forEach(b => b.addEventListener('click', () => { if (confirm('Mark this contract cancelled?')) upd(b.dataset.id, { status: 'cancelled' }); }));
+}
+
+document.getElementById('amc-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const v = (id) => document.getElementById(id).value.trim();
+  const start = v('amc-start');
+  const row = { customer_name: v('amc-name'), phone: v('amc-phone'), plan: v('amc-plan'), appliances: v('amc-appliances') || null, address: v('amc-address') || null, start_date: start, end_date: addYear(start), amount_paid: v('amc-paid') === '' ? null : Number(v('amc-paid')) };
+  const { error } = await client.from('amc_contracts').insert([row]);
+  const msg = document.getElementById('amc-msg');
+  if (error) { msg.textContent = 'Could not save: ' + error.message; return; }
+  msg.textContent = 'Saved.'; setTimeout(() => msg.textContent = '', 1500);
+  e.target.reset(); loadAmc();
+});
 
 // ---------------------------------------------------------------
 // CONTACT MESSAGES
@@ -966,6 +1066,7 @@ const SERVICE_PAGE_LABELS = {
   'geyser-repair': 'Geyser / Water Heater Repair',
   'heater-repair': 'Room Heater Repair',
   'microwave-repair': 'Microwave Repair',
+  'scrap-buying': 'Scrap Buying',
 };
 
 async function loadPricingItems() {
@@ -1125,6 +1226,7 @@ const CONTENT_PAGES = [
   { key: 'service_geyser_repair', label: 'Geyser / Water Heater Repair Page' },
   { key: 'service_heater_repair', label: 'Room Heater Repair Page' },
   { key: 'service_microwave_repair', label: 'Microwave Repair Page' },
+  { key: 'service_scrap_buying', label: 'Scrap Buying Page' },
 ];
 
 let currentContentPageKey = null;
