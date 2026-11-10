@@ -131,5 +131,12 @@ Can be set up and collecting reviews before the website is even live:
 
 ---
 
+## Scrap buying, AMC plans & ops upgrade
+Run in this order in Supabase SQL Editor: `supabase/scrap-and-amc-update.sql`, then `supabase/ops-upgrade.sql`.
+- **Scrap buying** — `/services/scrap-buying.html` plus three SEO pages (`sell-old-ac`, `sell-old-refrigerator`, `sell-old-washing-machine`). Requests land in Bookings as `scrap-*`; for those rows enter the payout in **Amount** and the seller's ID reference in the extra box. Customer photos (private bucket `scrap-photos`) open via **View photos**.
+- **AMC plans** — `/services/amc.html` (Care + Comprehensive per appliance, prices from Admin > Pricing). Track signed customers in **AMC Contracts**: add a contract, tick visits, renew in one click, send a WhatsApp reminder.
+- **Spam guard** — hidden honeypot field on all forms, plus a database trigger limiting 3 submissions per phone per 10 minutes and capping text length.
+- **Google Business Profile** — add a secondary category for buying used appliances (check the exact name offered in your region).
+
 ## Pricing & warranty note
 Pricing (`pricing.html`) is based on current Delhi NCR market rates (Urban Company, Icoolfix, Sahil Service, July 2026) — adjust up/down once you've run a few real jobs and know your actual margins and technician costs. Warranty terms (30-day labor, 7-day gas refill, 90-day parts) match common local practice; edit `pricing.html` and `terms.html` if you want different terms.

@@ -62,6 +62,7 @@
     <div class="form-card">
       <div id="booking-msg" class="form-msg"></div>
       <form id="booking-form">
+        <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;height:0;width:0;opacity:0;">
         <div class="form-row-2">
           <div>
             <label for="customer_name">Full Name *</label>
@@ -83,7 +84,7 @@
               <option value="ac-installation">AC Installation</option>
               <option value="refrigerator-repair">Refrigerator Repair</option>
               <option value="washing-machine-repair">Washing Machine Repair</option>
-              <option value="amc">AMC (Annual Maintenance)</option>
+              <option value="amc">AMC (AC / Fridge / Washing Machine)</option>
               <option value="geyser-repair">Geyser / Water Heater Repair</option>
               <option value="heater-repair">Room Heater Repair</option>
               <option value="microwave-repair">Microwave Repair</option>
@@ -144,6 +145,10 @@
 <script>
   initSite({ activePage: '' });
   // Don't let customers pick a past date for preferred service date
+  // Preselect service/plan when arriving from an AMC plan button (?service=amc&plan=...)
+  (function(){ const q = new URLSearchParams(location.search);
+    if (q.get('service')) document.getElementById('service_type').value = q.get('service');
+    if (q.get('plan')) document.getElementById('notes').value = 'AMC plan requested: ' + q.get('plan'); })();
   document.getElementById('preferred_date').min = new Date().toISOString().split('T')[0];
 </script>
 </body>
