@@ -310,22 +310,29 @@
             <div><label for="amc-phone">Phone *</label><input type="tel" id="amc-phone" required></div>
           </div>
           <div class="form-row-2">
-            <div><label for="amc-plan">Plan *</label><input type="text" id="amc-plan" list="amc-plan-list" placeholder="e.g. AC Care Plan" required>
-              <datalist id="amc-plan-list"><option value="AC Care Plan"><option value="AC Comprehensive Plan"><option value="Fridge Care Plan"><option value="Fridge Comprehensive Plan"><option value="Washer Care Plan"><option value="Washer Comprehensive Plan"></datalist></div>
-            <div><label for="amc-appliances">Appliances covered</label><input type="text" id="amc-appliances" placeholder="e.g. 2 split ACs — Voltas, LG"></div>
+            <div><label for="amc-plan">Plan *</label><input type="text" id="amc-plan" list="amc-plan-list" placeholder="e.g. AC Basic Care" required>
+              <datalist id="amc-plan-list"><option value="AC Basic Care"><option value="AC Premium Care"><option value="Refrigerator Care"><option value="Washing Machine Care"><option value="Family Home Care"><option value="AC Care Plan"><option value="AC Comprehensive Plan"><option value="Fridge Care Plan"><option value="Fridge Comprehensive Plan"><option value="Washer Care Plan"><option value="Washer Comprehensive Plan"></datalist></div>
+            <div><label for="amc-appliances">Appliances covered</label><input type="text" id="amc-appliances" placeholder="e.g. 1 split AC — Voltas, model XYZ"></div>
           </div>
           <div class="form-row-2">
             <div><label for="amc-start">Start date *</label><input type="date" id="amc-start" required></div>
-            <div><label for="amc-paid">Amount paid (₹)</label><input type="number" id="amc-paid" placeholder="0"></div>
+            <div><label for="amc-paid">Amount paid (₹)</label><input type="number" id="amc-paid" min="0" step="1" placeholder="0"></div>
           </div>
-          <label for="amc-address">Address</label><input type="text" id="amc-address">
+          <div class="form-row-2">
+            <div><label for="amc-visits-total">Included visits *</label><input type="number" id="amc-visits-total" min="1" max="20" value="2" required></div>
+            <div><label for="amc-address">Address</label><input type="text" id="amc-address"></div>
+          </div>
+          <label for="amc-notes">Contract notes / exclusions agreed</label><textarea id="amc-notes" rows="2" placeholder="Record confirmed scope, discounts, exclusions and any special terms"></textarea>
           <button type="submit" class="btn btn-primary">Save contract</button>
           <span id="amc-msg" style="margin-left:10px;"></span>
         </form>
       </div>
+      <div id="amc-renewal-summary" class="form-card" style="max-width:none;margin:0 0 16px;padding:14px 18px;">
+        Renewal review: loading upcoming contract expiries…
+      </div>
       <div style="overflow-x:auto;">
         <table>
-          <thead><tr><th>Customer</th><th>Plan</th><th>Period</th><th>Visits</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Customer</th><th>Plan</th><th>Period</th><th>Visits</th><th>Status / renewal</th><th>Actions</th></tr></thead>
           <tbody id="amc-body"><tr><td colspan="6" class="text-center">Loading...</td></tr></tbody>
         </table>
       </div>
@@ -508,6 +515,16 @@ function esc(str) {
   return d.innerHTML;
 }
 
+// Customer phone values are untrusted database content. Only render a tel:
+// link when the normalized value contains a plausible phone number.
+function safeTelLink(value) {
+  const display = String(value ?? '');
+  const digits = display.replace(/\D/g, '');
+  if (digits.length < 7 || digits.length > 15) return esc(display);
+  const href = '+' + digits;
+  return `<a href="tel:${href}">${esc(display)}</a>`;
+}
+
 function renderTable(data) {
   const tbody = document.getElementById('bookings-body');
   if (data.length === 0) {
@@ -518,10 +535,10 @@ function renderTable(data) {
     <tr>
       <td>#${b.id}</td>
       <td>${new Date(b.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</td>
-      <td><strong>${esc(b.customer_name)}</strong><br><a href="tel:${b.phone}">${esc(b.phone)}</a></td>
+      <td><strong>${esc(b.customer_name)}</strong><br>${safeTelLink(b.phone)}</td>
       <td>${esc(b.service_type)}${b.appliance_brand ? '<br><span style="color:var(--ink-soft);">' + esc(b.appliance_brand) + '</span>' : ''}</td>
       <td>${esc(b.address)}<br><span style="color:var(--ink-soft);">${esc(b.area || '')}</span></td>
-      <td>${b.preferred_date || '—'}<br>${b.preferred_slot || ''}</td>
+      <td>${esc(b.preferred_date || '—')}<br>${esc(b.preferred_slot || '')}</td>
       <td style="max-width:200px;">${esc(b.notes || '—')}</td>
       <td>
         <select class="status-select" data-id="${b.id}">
@@ -630,62 +647,121 @@ function renderTable(data) {
 
 
 // ---------------------------------------------------------------
-// AMC CONTRACTS — start/end dates, visits done (of 2), renewals.
-// Table: public.amc_contracts (admin-only). See supabase/ops-upgrade.sql.
-// ---------------------------------------------------------------
+// AMC CONTRACTS — admin-only contract register and 60-day renewal review.
 let allAmc = [];
-const addYear = (d) => { const x = new Date(d + 'T00:00:00'); x.setFullYear(x.getFullYear() + 1); return x.toISOString().split('T')[0]; };
+const localDate = (date) => {
+  const d = new Date(date);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+};
+const addDays = (date, days) => {
+  const d = new Date(date + 'T12:00:00');
+  d.setDate(d.getDate() + days);
+  return localDate(d);
+};
+const addYear = (date) => {
+  const d = new Date(date + 'T12:00:00');
+  d.setFullYear(d.getFullYear() + 1);
+  return localDate(d);
+};
 
 async function loadAmc() {
   const { data, error } = await client.from('amc_contracts').select('*').order('end_date', { ascending: true });
   const tbody = document.getElementById('amc-body');
   if (error) { tbody.innerHTML = `<tr><td colspan="6">Couldn't load contracts — run supabase/ops-upgrade.sql first. (${esc(error.message)})</td></tr>`; return; }
-  allAmc = data;
+  allAmc = data || [];
   renderAmc();
 }
 
 function renderAmc() {
   const tbody = document.getElementById('amc-body');
+  const summary = document.getElementById('amc-renewal-summary');
+  const today = new Date(localDate(new Date()) + 'T00:00:00');
+  const active = allAmc.filter(c => c.status !== 'cancelled');
+  const due = active.filter(c => {
+    const days = Math.round((new Date(c.end_date + 'T00:00:00') - today) / 86400000);
+    return days >= 0 && days <= 60;
+  });
+  const expired = active.filter(c => new Date(c.end_date + 'T00:00:00') < today);
+  if (summary) {
+    summary.innerHTML = `<strong>Monthly renewal review:</strong> ${due.length} active contract(s) expire in the next 60 days; ${expired.length} contract(s) have expired. Review these customers and send renewal follow-ups.`;
+  }
   if (!allAmc.length) { tbody.innerHTML = '<tr><td colspan="6" class="text-center">No AMC contracts yet.</td></tr>'; return; }
-  const today = new Date(new Date().toISOString().split('T')[0] + 'T00:00:00');
   tbody.innerHTML = allAmc.map(c => {
     const days = Math.round((new Date(c.end_date + 'T00:00:00') - today) / 86400000);
     const cancelled = c.status === 'cancelled';
     const badge = cancelled ? '<span class="pay-pill unpaid">Cancelled</span>'
-      : days < 0 ? '<span class="pay-pill" style="background:#F8E1E1;color:#8A2020;">Expired ' + (-days) + 'd ago</span>'
-      : days <= 30 ? '<span class="pay-pill" style="background:#FFF1D6;color:#8A5A00;">Renew in ' + days + 'd</span>'
-      : '<span class="pay-pill paid">Active · ' + days + 'd left</span>';
-    const remind = `https://wa.me/${String(c.phone).replace(/\D/g, '').replace(/^(\d{10})$/, '91$1')}?text=${encodeURIComponent('Hi ' + c.customer_name + ', your ' + c.plan + ' with Shree Shyam Services ends on ' + c.end_date + '. Would you like to renew it?')}`;
+      : days < 0 ? `<span class="pay-pill" style="background:#F8E1E1;color:#8A2020;">Expired ${-days}d ago</span>`
+      : days <= 60 ? `<span class="pay-pill" style="background:#FFF1D6;color:#8A5A00;">Renewal review · ${days}d</span>`
+      : `<span class="pay-pill paid">Active · ${days}d left</span>`;
+    const digits = String(c.phone || '').replace(/\D/g, '');
+    const waPhone = digits.length === 10 ? '91' + digits : digits;
+    const remindText = `Hi ${c.customer_name}, your ${c.plan} with Shree Shyam Services ends on ${c.end_date}. Would you like us to share renewal options?`;
+    const remind = waPhone.length >= 10 && waPhone.length <= 13
+      ? `https://wa.me/${waPhone}?text=${encodeURIComponent(remindText)}` : '';
     return `<tr>
-      <td><strong>${esc(c.customer_name)}</strong><br><a href="tel:${esc(c.phone)}">${esc(c.phone)}</a><br><span style="color:var(--ink-soft);">${esc(c.address || '')}</span></td>
-      <td>${esc(c.plan)}<br><span style="color:var(--ink-soft);">${esc(c.appliances || '')}</span>${c.amount_paid ? '<br>₹' + c.amount_paid : ''}</td>
-      <td>${c.start_date} → ${c.end_date}</td>
-      <td>${c.visits_done}/${c.visits_total}<br><button type="button" class="link-btn amc-visit" data-id="${c.id}" ${c.visits_done >= c.visits_total ? 'disabled' : ''}>+ Visit done</button></td>
+      <td><strong>${esc(c.customer_name)}</strong><br><a href="tel:${digits}">${esc(c.phone)}</a><br><span style="color:var(--ink-soft);">${esc(c.address || '')}</span></td>
+      <td>${esc(c.plan)}<br><span style="color:var(--ink-soft);">${esc(c.appliances || '')}</span>${c.amount_paid != null ? '<br>₹' + Number(c.amount_paid).toLocaleString('en-IN') : ''}${c.notes ? '<br><small>' + esc(c.notes) + '</small>' : ''}</td>
+      <td>${esc(c.start_date)} → ${esc(c.end_date)}</td>
+      <td>${Number(c.visits_done) || 0}/${Number(c.visits_total) || 2}<br><button type="button" class="link-btn amc-visit" data-id="${c.id}" ${c.visits_done >= c.visits_total ? 'disabled' : ''}>+ Visit done</button></td>
       <td>${badge}</td>
-      <td><a class="link-btn" href="${remind}" target="_blank" rel="noopener">WhatsApp reminder</a><br>
+      <td>${remind ? `<a class="link-btn" href="${remind}" target="_blank" rel="noopener">WhatsApp reminder</a><br>` : '' }
         <button type="button" class="link-btn amc-renew" data-id="${c.id}" style="margin-top:6px;">Renew 1 year</button>
         <button type="button" class="link-btn amc-cancel" data-id="${c.id}" style="margin-top:6px;">Cancel</button></td>
     </tr>`;
   }).join('');
-  const upd = async (id, patch) => { const { error } = await client.from('amc_contracts').update(patch).eq('id', id); if (error) alert('Could not save: ' + error.message); else loadAmc(); };
-  tbody.querySelectorAll('.amc-visit').forEach(b => b.addEventListener('click', () => { const c = allAmc.find(x => x.id == b.dataset.id); upd(c.id, { visits_done: c.visits_done + 1 }); }));
-  tbody.querySelectorAll('.amc-renew').forEach(b => b.addEventListener('click', () => { const c = allAmc.find(x => x.id == b.dataset.id); const start = c.end_date; if (confirm('Renew from ' + start + ' to ' + addYear(start) + '? Visits reset to 0.')) upd(c.id, { start_date: start, end_date: addYear(start), visits_done: 0, status: 'active' }); }));
-  tbody.querySelectorAll('.amc-cancel').forEach(b => b.addEventListener('click', () => { if (confirm('Mark this contract cancelled?')) upd(b.dataset.id, { status: 'cancelled' }); }));
+  const upd = async (id, patch) => {
+    const { error } = await client.from('amc_contracts').update(patch).eq('id', id);
+    if (error) alert('Could not save: ' + error.message); else loadAmc();
+  };
+  tbody.querySelectorAll('.amc-visit').forEach(b => b.addEventListener('click', () => {
+    const c = allAmc.find(x => String(x.id) === b.dataset.id);
+    if (c && Number(c.visits_done) < Number(c.visits_total)) upd(c.id, { visits_done: Number(c.visits_done) + 1 });
+  }));
+  tbody.querySelectorAll('.amc-renew').forEach(b => b.addEventListener('click', () => {
+    const c = allAmc.find(x => String(x.id) === b.dataset.id);
+    if (!c) return;
+    const start = addDays(c.end_date, 1);
+    const end = addYear(start);
+    if (confirm(`Renew ${c.customer_name}'s contract from ${start} to ${end}? Visits reset to 0. Confirm payment and new plan terms separately before renewing.`)) {
+      upd(c.id, { start_date: start, end_date: end, visits_done: 0, status: 'active' });
+    }
+  }));
+  tbody.querySelectorAll('.amc-cancel').forEach(b => b.addEventListener('click', () => {
+    if (confirm('Mark this contract cancelled?')) upd(b.dataset.id, { status: 'cancelled' });
+  }));
 }
 
 document.getElementById('amc-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const v = (id) => document.getElementById(id).value.trim();
   const start = v('amc-start');
-  const row = { customer_name: v('amc-name'), phone: v('amc-phone'), plan: v('amc-plan'), appliances: v('amc-appliances') || null, address: v('amc-address') || null, start_date: start, end_date: addYear(start), amount_paid: v('amc-paid') === '' ? null : Number(v('amc-paid')) };
-  const { error } = await client.from('amc_contracts').insert([row]);
+  const phoneDigits = v('amc-phone').replace(/\D/g, '');
+  const visitsTotal = Number(v('amc-visits-total'));
+  const amount = v('amc-paid');
   const msg = document.getElementById('amc-msg');
+  if (phoneDigits.length < 10 || phoneDigits.length > 13) { msg.textContent = 'Enter a valid phone number.'; return; }
+  if (!Number.isInteger(visitsTotal) || visitsTotal < 1 || visitsTotal > 20) { msg.textContent = 'Included visits must be between 1 and 20.'; return; }
+  if (amount !== '' && (!Number.isFinite(Number(amount)) || Number(amount) < 0)) { msg.textContent = 'Enter a valid amount.'; return; }
+  const row = {
+    customer_name: v('amc-name'),
+    phone: phoneDigits,
+    plan: v('amc-plan'),
+    appliances: v('amc-appliances') || null,
+    address: v('amc-address') || null,
+    start_date: start,
+    end_date: addYear(start),
+    visits_total: visitsTotal,
+    amount_paid: amount === '' ? null : Number(amount),
+    notes: v('amc-notes') || null
+  };
+  const { error } = await client.from('amc_contracts').insert([row]);
   if (error) { msg.textContent = 'Could not save: ' + error.message; return; }
-  msg.textContent = 'Saved.'; setTimeout(() => msg.textContent = '', 1500);
-  e.target.reset(); loadAmc();
+  msg.textContent = 'Contract saved.';
+  e.target.reset();
+  document.getElementById('amc-visits-total').value = '2';
+  loadAmc();
 });
 
-// ---------------------------------------------------------------
 // CONTACT MESSAGES
 // ---------------------------------------------------------------
 let allMessages = [];
