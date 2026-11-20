@@ -91,6 +91,44 @@ async function loadBusinessInfo() {
   }
 }
 
+// CMS fields intentionally support a small set of formatting tags. Rebuild
+// the markup from an allowlist so stored content cannot execute scripts,
+// event handlers, styles, iframes, or javascript: URLs on public pages.
+function sanitizeCmsHtml(input) {
+  const parser = new DOMParser();
+  const parsed = parser.parseFromString(String(input ?? ""), "text/html");
+  const allowedTags = new Set(["A", "B", "BR", "BLOCKQUOTE", "EM", "H2", "H3", "H4", "I", "LI", "OL", "P", "STRONG", "U", "UL"]);
+  const copyNode = (node) => {
+    if (node.nodeType === Node.TEXT_NODE) return document.createTextNode(node.nodeValue || "");
+    if (node.nodeType !== Node.ELEMENT_NODE) return document.createDocumentFragment();
+    const tag = node.tagName.toUpperCase();
+    if (!allowedTags.has(tag)) {
+      const fragment = document.createDocumentFragment();
+      Array.from(node.childNodes).forEach(child => fragment.appendChild(copyNode(child)));
+      return fragment;
+    }
+    const clean = document.createElement(tag.toLowerCase());
+    if (tag === "A") {
+      const href = node.getAttribute("href") || "";
+      try {
+        const url = new URL(href, window.location.origin);
+        if (["http:", "https:", "mailto:", "tel:"].includes(url.protocol)) {
+          clean.setAttribute("href", url.href);
+          if (url.protocol === "http:" || url.protocol === "https:") {
+            clean.setAttribute("rel", "noopener noreferrer");
+            clean.setAttribute("target", "_blank");
+          }
+        }
+      } catch (_) { /* discard invalid href */ }
+    }
+    Array.from(node.childNodes).forEach(child => clean.appendChild(copyNode(child)));
+    return clean;
+  };
+  const output = document.createElement("div");
+  Array.from(parsed.body.childNodes).forEach(node => output.appendChild(copyNode(node)));
+  return output.innerHTML;
+}
+
 async function applyPageContent(pageKey) {
   try {
     const client = getClient();
@@ -98,7 +136,9 @@ async function applyPageContent(pageKey) {
     const { data, error } = await client.from("page_content").select("content").eq("page_key", pageKey).single();
     if (error || !data || !data.content) return;
     Object.entries(data.content).forEach(([key, value]) => {
-      document.querySelectorAll(`[data-ck="${key}"]`).forEach(el => { el.innerHTML = value; });
+      document.querySelectorAll("[data-ck]").forEach(el => {
+        if (el.dataset.ck === key) el.innerHTML = sanitizeCmsHtml(value);
+      });
     });
   } catch (err) {
     console.error(err);
@@ -491,13 +531,21 @@ async function handleBookingSubmit(e) {
     area: form.area.value,
     preferred_date: form.preferred_date.value || null,
     preferred_slot: form.preferred_slot.value,
-    notes: form.notes.value.trim() || null,
-    status: "new",
+    notes: [
+      form.notes.value.trim(),
+      form.service_type.value === "amc" && form.amc_plan.value && "AMC plan: " + form.amc_plan.value,
+      form.service_type.value === "amc" && form.amc_appliance.value && "AMC appliance: " + form.amc_appliance.value,
+      form.service_type.value === "amc" && form.amc_model.value.trim() && "AMC model: " + form.amc_model.value.trim(),
+      form.service_type.value === "amc" && form.amc_age.value && "Appliance age: " + form.amc_age.value,
+      form.service_type.value === "amc" && form.amc_condition.value && "Current condition: " + form.amc_condition.value
+    ].filter(Boolean).join(" | ") || null,
+    // status is assigned by the database default; public visitors cannot set it.
   };
 
-  if (!payload.customer_name || !payload.phone || !payload.service_type || !payload.address) {
+  if (!payload.customer_name || !payload.phone || !payload.service_type || !payload.address ||
+      (payload.service_type === "amc" && (!form.amc_plan.value || !form.amc_appliance.value))) {
     msgBox.classList.add("err");
-    msgBox.textContent = "Please fill in all required fields.";
+    msgBox.textContent = "Please fill in all required fields, including the AMC plan and appliance type.";
     return;
   }
 
@@ -507,17 +555,16 @@ async function handleBookingSubmit(e) {
   try {
     const client = getClient();
     if (!client) throw new Error("Booking system not configured yet.");
-    const { data, error } = await client.from("bookings").insert([payload]).select();
+    const { error } = await client.from("bookings").insert([payload]);
     if (error) throw error;
 
     msgBox.classList.add("ok");
-    const ticketId = data && data[0] ? data[0].id : "—";
-    msgBox.innerHTML = `Booking received! Your reference ID is <strong>#${ticketId}</strong>. We'll call you shortly to confirm the slot.`;
+    msgBox.textContent = "Booking received! We'll call you shortly to confirm the slot.";
     form.reset();
 
     // Optional: also open WhatsApp with a prefilled summary so the customer has a copy
     const waText = encodeURIComponent(
-      `New booking request:\nName: ${payload.customer_name}\nService: ${payload.service_type}\nArea: ${payload.area}\nPreferred: ${payload.preferred_date} (${payload.preferred_slot})`
+      `New booking request:\nName: ${payload.customer_name}\nService: ${payload.service_type}\nArea: ${payload.area}\nPreferred: ${payload.preferred_date} (${payload.preferred_slot})${payload.service_type === "amc" ? "\nAMC details: " + (payload.notes || "") : ""}`
     );
     const waLink = document.getElementById("booking-wa-confirm");
     if (waLink) {
@@ -605,7 +652,7 @@ async function handleScrapSubmit(e) {
     preferred_date: f.preferred_date.value || null,
     preferred_slot: "morning",
     notes: details,
-    status: "new",
+    // status is assigned by the database default; public visitors cannot set it.
   };
   if (!payload.customer_name || !payload.phone || !f.appliance.value || !f.condition.value || !payload.address) {
     msgBox.classList.add("err");
@@ -619,7 +666,12 @@ async function handleScrapSubmit(e) {
     if (!client) throw new Error("not configured");
     // Photos go to a private bucket; failures here never block the request itself.
     const photoPaths = [];
-    const folder = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
+    const folder = (window.crypto && typeof window.crypto.randomUUID === "function")
+      ? window.crypto.randomUUID()
+      : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+          const r = Math.random() * 16 | 0;
+          return (c === "x" ? r : (r & 0x3 | 0x8)).toString(16);
+        });
     for (let i = 0; i < files.length; i++) {
       const ext = files[i].type === "image/png" ? "png" : files[i].type === "image/webp" ? "webp" : "jpg";
       const path = `${folder}/${i + 1}.${ext}`;
@@ -627,11 +679,10 @@ async function handleScrapSubmit(e) {
       if (!up.error) photoPaths.push(path);
     }
     if (photoPaths.length) payload.photo_paths = photoPaths;
-    const { data, error } = await client.from("bookings").insert([payload]).select();
+    const { error } = await client.from("bookings").insert([payload]);
     if (error) throw error;
     msgBox.classList.add("ok");
-    const id = data && data[0] ? data[0].id : "—";
-    msgBox.innerHTML = `Request received! Your reference ID is <strong>#${id}</strong>. We'll call you shortly with a price.`;
+    msgBox.textContent = "Request received! We'll call you shortly with a price.";
     const waText = encodeURIComponent(`Scrap quote request:\nName: ${payload.customer_name}\nItem: ${f.appliance.options[f.appliance.selectedIndex].text}\nCondition: ${f.condition.value}\nArea: ${payload.area}`);
     form.reset();
     const wa = document.getElementById("scrap-wa-confirm");
