@@ -10,16 +10,34 @@ alter table public.bookings add column if not exists photo_paths text[];
 -- 2) Spam guard — runs as definer so it can count rows even though anon cannot read them.
 create or replace function public.limit_public_inserts()
 returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  normalized_phone text;
 begin
+  normalized_phone := regexp_replace(coalesce(new.phone, ''), '[^0-9]', '', 'g');
+  if length(normalized_phone) < 10 or length(normalized_phone) > 15 then
+    raise exception 'Please enter a valid phone number.';
+  end if;
+  new.phone := normalized_phone;
   if tg_table_name = 'bookings' then
-    if (select count(*) from public.bookings where phone = new.phone and created_at > now() - interval '10 minutes') >= 3
-      or length(coalesce(new.notes, '')) > 2000 or length(new.address) > 500 or length(new.customer_name) > 120 then
-      raise exception 'Too many or oversized requests — please call us directly.';
+    if length(trim(coalesce(new.customer_name, ''))) < 2
+      or length(coalesce(new.customer_name, '')) > 120
+      or length(coalesce(new.address, '')) > 500
+      or length(coalesce(new.notes, '')) > 2000 then
+      raise exception 'Some booking details are invalid or too long.';
+    end if;
+    if (select count(*) from public.bookings
+        where regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g') = normalized_phone
+          and created_at > now() - interval '10 minutes') >= 3 then
+      raise exception 'Too many requests — please call us directly.';
     end if;
   elsif tg_table_name = 'contact_messages' then
-    if (select count(*) from public.contact_messages where phone = new.phone and created_at > now() - interval '10 minutes') >= 3
-      or length(new.message) > 2000 or length(new.name) > 120 then
-      raise exception 'Too many or oversized messages — please call us directly.';
+    if length(coalesce(new.message, '')) > 2000 or length(new.name) > 120 then
+      raise exception 'Some message details are invalid or too long.';
+    end if;
+    if (select count(*) from public.contact_messages
+        where regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g') = normalized_phone
+          and created_at > now() - interval '10 minutes') >= 3 then
+      raise exception 'Too many messages — please call us directly.';
     end if;
   end if;
   return new;
@@ -39,7 +57,10 @@ on conflict (id) do update set public = false, file_size_limit = 3145728, allowe
 
 drop policy if exists "anon can upload scrap photos" on storage.objects;
 create policy "anon can upload scrap photos" on storage.objects for insert to anon
-  with check (bucket_id = 'scrap-photos');
+  with check (
+    bucket_id = 'scrap-photos'
+    and name ~* '^[0-9a-f-]{36}/[1-3]\.(jpg|png|webp)$'
+  );
 drop policy if exists "admin can read scrap photos" on storage.objects;
 create policy "admin can read scrap photos" on storage.objects for select to authenticated
   using (bucket_id = 'scrap-photos' and public.is_admin());

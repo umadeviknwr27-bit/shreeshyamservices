@@ -19,7 +19,8 @@ create table if not exists public.bookings (
   status text not null default 'new', -- 'new','confirmed','in-progress','completed','cancelled'
   assigned_technician text,
   final_amount numeric,
-  admin_notes text
+  admin_notes text,
+  photo_paths text[]
 );
 
 -- ---------- CONTACT MESSAGES ----------
@@ -145,6 +146,11 @@ create policy "admin can delete bookings"
   to authenticated
   using (public.is_admin());
 
+-- Public forms can insert customer-submitted fields only. Never allow visitors
+-- to set booking status, payment state, amount, technician or admin notes.
+revoke insert on table public.bookings from public, anon, authenticated;
+grant insert (customer_name, phone, service_type, appliance_brand, address, area, preferred_date, preferred_slot, notes, photo_paths) on table public.bookings to anon;
+
 -- CONTACT MESSAGES policies (same pattern)
 drop policy if exists "anon can insert contact messages" on public.contact_messages;
 create policy "anon can insert contact messages"
@@ -164,6 +170,9 @@ create policy "admin can update contact messages"
   to authenticated
   using (public.is_admin())
   with check (public.is_admin());
+
+revoke insert on table public.contact_messages from public, anon, authenticated;
+grant insert (name, phone, message) on table public.contact_messages to anon;
 
 -- ADMIN_USERS policies — nobody can self-promote to admin via the API.
 -- Rows are only ever inserted manually by you by editing the table
