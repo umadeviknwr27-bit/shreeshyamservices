@@ -140,3 +140,10 @@ Run in this order in Supabase SQL Editor: `supabase/scrap-and-amc-update.sql`, t
 
 ## Pricing & warranty note
 Pricing (`pricing.html`) is based on current Delhi NCR market rates (Urban Company, Icoolfix, Sahil Service, July 2026) — adjust up/down once you've run a few real jobs and know your actual margins and technician costs. Warranty terms (30-day labor, 7-day gas refill, 90-day parts) match common local practice; edit `pricing.html` and `terms.html` if you want different terms.
+
+
+## Security hardening update
+
+After deploying the updated frontend, run `supabase/security-hardening.sql` in the Supabase SQL Editor **after** `schema.sql` and `ops-upgrade.sql`. This migration restricts anonymous inserts to customer-submitted columns, normalizes phone numbers for spam throttling, validates input lengths, and narrows anonymous scrap-photo upload paths. The public booking forms no longer request inserted rows back, so they do not require public SELECT access.
+
+The frontend success message intentionally no longer displays a database booking ID because public users are not permitted to read inserted booking records. Admin users can still see the booking in the dashboard.

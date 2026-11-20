@@ -97,6 +97,52 @@
           </div>
         </div>
 
+        <div id="amc-details" class="form-card" style="display:none;margin:16px 0;padding:18px;background:#f7faf9;border:1px solid var(--line);">
+          <h3 style="margin:0 0 6px;">AMC enquiry details</h3>
+          <p style="font-size:.88rem;color:var(--ink-soft);margin:0 0 14px;">Share a few details so we can recommend the right plan. This is an enquiry, not a paid booking.</p>
+          <div class="form-row-2">
+            <div>
+              <label for="amc_plan">Preferred AMC plan *</label>
+              <select id="amc_plan" name="amc_plan">
+                <option value="">Select a plan</option>
+                <option>AC Basic Care</option>
+                <option>AC Premium Care</option>
+                <option>Refrigerator Care</option>
+                <option>Washing Machine Care</option>
+                <option>Family Home Care</option>
+                <option>Not sure — recommend a plan</option>
+              </select>
+            </div>
+            <div>
+              <label for="amc_appliance">Appliance type *</label>
+              <select id="amc_appliance" name="amc_appliance">
+                <option value="">Select appliance</option>
+                <option>Split AC</option>
+                <option>Window AC</option>
+                <option>Refrigerator</option>
+                <option>Washing Machine - Front Load</option>
+                <option>Washing Machine - Top Load</option>
+                <option>Multiple appliances / Family package</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row-2">
+            <div><label for="amc_model">Model (if known)</label><input id="amc_model" name="amc_model" type="text" maxlength="100" placeholder="Model number or model name"></div>
+            <div><label for="amc_age">Appliance age</label>
+              <select id="amc_age" name="amc_age">
+                <option value="">Select approximate age</option>
+                <option>Less than 2 years</option><option>2–5 years</option><option>6–8 years</option><option>More than 8 years</option><option>Not sure</option>
+              </select>
+            </div>
+          </div>
+          <label for="amc_condition">Current condition</label>
+          <select id="amc_condition" name="amc_condition">
+            <option value="Working normally">Working normally</option>
+            <option value="Needs inspection / minor issue">Needs inspection / minor issue</option>
+            <option value="Currently faulty">Currently faulty</option>
+          </select>
+        </div>
+
         <label for="address">Full Address *</label>
         <textarea id="address" name="address" rows="2" placeholder="House no., street, landmark" required></textarea>
 
@@ -146,9 +192,26 @@
   initSite({ activePage: '' });
   // Don't let customers pick a past date for preferred service date
   // Preselect service/plan when arriving from an AMC plan button (?service=amc&plan=...)
-  (function(){ const q = new URLSearchParams(location.search);
-    if (q.get('service')) document.getElementById('service_type').value = q.get('service');
-    if (q.get('plan')) document.getElementById('notes').value = 'AMC plan requested: ' + q.get('plan'); })();
+  (function(){
+    const q = new URLSearchParams(location.search);
+    const service = document.getElementById('service_type');
+    const amcBox = document.getElementById('amc-details');
+    const plan = document.getElementById('amc_plan');
+    function toggleAmcFields(){
+      const isAmc = service.value === 'amc';
+      amcBox.style.display = isAmc ? 'block' : 'none';
+      ['amc_plan','amc_appliance'].forEach(id => document.getElementById(id).required = isAmc);
+    }
+    if (q.get('service')) service.value = q.get('service');
+    if (q.get('plan')) {
+      const requested = q.get('plan').replace(/\+/g, ' ');
+      const option = Array.from(plan.options).find(o => o.value.toLowerCase() === requested.toLowerCase() || o.text.toLowerCase() === requested.toLowerCase());
+      if (option) plan.value = option.value;
+      else document.getElementById('notes').value = 'AMC plan requested: ' + requested;
+    }
+    service.addEventListener('change', toggleAmcFields);
+    toggleAmcFields();
+  })();
   document.getElementById('preferred_date').min = new Date().toISOString().split('T')[0];
 </script>
 </body>
